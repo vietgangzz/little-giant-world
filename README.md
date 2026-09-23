@@ -1,9 +1,10 @@
 # Little Giant! — a VietGang tiny-planet tale
 
-A 50-second interactive short about the VietGang mascot. Little Giant rounds up the
+A 60-second interactive short about the VietGang mascot. Little Giant rounds up the
 crew on one xe máy through Hà Giang, Hạ Long, Hội An and Sài Gòn (nine on one bike,
 totally normal). Then the whole crew flies around a tiny planet: Singapore, Tokyo,
-Cairo, Paris and New York. Everyone ends up back home around a Đông Sơn bronze drum.
+Cairo, Paris and New York. Everyone ends up back home around a Đông Sơn bronze drum,
+and it signs off "made with ♥ by VG TEAM".
 
 After the story the planet is yours:
 
@@ -31,8 +32,17 @@ Vite + TypeScript + three.js, no other runtime dependencies.
 - **Story**: a pure function of time (`Story.update(t)`), so any frame can be
   scrubbed and replayed deterministically. Its cues drive the sound, the comic
   pops, the toasts and the passport stamps.
-- **Mascot**: the approved Little Giant SVG paths, extruded and bevelled, with a
-  nón lá lathed from the landing page's hat profile.
+- **Mascot**: the approved Little Giant SVG silhouette, *inflated* like a balloon
+  (`src/inflate.ts`): each point is lifted by a circular profile of its distance
+  to the outline, so the logo becomes a round pebble. The eyes, sparkles and
+  blush are decals that follow the curved face. The nón lá is lathed from the
+  landing page's hat profile.
+- **Sets**: every location is dressed in a flat local frame (`Local` in
+  `src/scenery.ts`) and wrapped onto the sphere, so props always stand upright.
+- **Camera**: each shot is a target (position, look, up, stiffness) that the rig
+  eases towards. Big moves arc around the subject so they never skim over it.
+  A clearance pass lifts the camera above the terrain and out of any hill that
+  blocks the line of sight, and trees shrink away when the camera gets close.
 
 ```sh
 pnpm install
@@ -47,4 +57,4 @@ pnpm build    # typecheck + production build in dist/
 - Sound effects: [Kenney](https://kenney.nl) *Music Jingles*, *Impact Sounds*
   and *Interface Sounds*, CC0. All audio is sampled; none of it is synthesised.
 - Fonts: Bangers and Nunito (Google Fonts, OFL).
-- Made with ♥ by VietGang and Claude Opus 5.5.
+- Made with ♥ by the VG team.
