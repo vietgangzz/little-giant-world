@@ -21,6 +21,7 @@ export class Sound {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       this.master = this.ctx.createGain();
+      this.master.gain.value = this.muted ? 0 : 1;
       this.master.connect(this.ctx.destination);
       this.musicGain = this.ctx.createGain();
       this.musicGain.connect(this.master);
@@ -63,7 +64,7 @@ export class Sound {
     this.music.connect(this.musicGain);
     this.musicGain.gain.cancelScheduledValues(this.ctx.currentTime);
     this.musicGain.gain.setValueAtTime(volume, this.ctx.currentTime);
-    this.music.start(0, Math.min(offset, buffer.duration - 0.1));
+    this.music.start(0, Math.max(0, Math.min(offset, buffer.duration - 0.1)));
   }
   fadeMusic(seconds: number) {
     if (!this.ctx || !this.musicGain) return;

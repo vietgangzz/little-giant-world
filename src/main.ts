@@ -249,7 +249,8 @@ function startStory(at: number) {
   mode = "story";
   document.body.dataset.mode = mode;
   document.querySelectorAll<HTMLButtonElement>(".modes button[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === "story"));
-  document.body.classList.remove("signing");
+  document.body.classList.remove("signing", "ended");
+  $("button[data-mode=story]").textContent = "▶ Story";
   $("#stamps").innerHTML = "";
   $("#toasts").innerHTML = "";
   storyTime = at;
@@ -262,28 +263,35 @@ function startStory(at: number) {
   applyShot(story.update(at, false), 0, true);
 }
 
+/** Every first interaction goes through here: audio can only unlock inside a gesture. */
+async function begin() {
+  if (!started) {
+    started = true;
+    document.body.classList.add("started");
+  }
+  await sound.unlock();
+}
 async function start() {
   if (started) return;
-  started = true;
-  document.body.classList.add("started");
-  await sound.unlock();
-  startStory(Number(params.get("t") ?? 0));
+  await begin();
+  startStory(Math.max(0, Number(params.get("t") ?? 0) || 0));
+}
+async function go(next: Mode) {
+  await begin();
+  setMode(next);
 }
 $("#play").addEventListener("click", start);
 document.querySelectorAll<HTMLButtonElement>(".modes button[data-mode]").forEach((b) =>
-  b.addEventListener("click", () => {
-    if (!started) { started = true; document.body.classList.add("started"); void sound.unlock(); }
-    setMode(b.dataset.mode as Mode);
-  }));
+  b.addEventListener("click", () => void go(b.dataset.mode as Mode)));
 $("#mute").addEventListener("click", () => {
   sound.setMuted(!sound.muted);
   $("#mute").classList.toggle("muted", sound.muted);
 });
 addEventListener("keydown", (e) => {
-  if (e.key === "1") setMode("orbit");
-  if (e.key === "2") setMode("bike");
-  if (e.key === "3") setMode("plane");
-  if (e.key.toLowerCase() === "r") setMode("story");
+  if (e.key === "1") void go("orbit");
+  if (e.key === "2") void go("bike");
+  if (e.key === "3") void go("plane");
+  if (e.key.toLowerCase() === "r") void go("story");
   if (e.key.toLowerCase() === "m") $("#mute").click();
   if (e.key === " " && mode === "story") {
     playing = !playing;
@@ -306,6 +314,7 @@ canvas.addEventListener("pointermove", (e) => {
   if (!prev) return;
   const dx = e.clientX - prev.x, dy = e.clientY - prev.y;
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (mode !== "orbit") return;
   if (pointers.size === 2) {
     const [a, b] = [...pointers.values()];
     const d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -313,7 +322,6 @@ canvas.addEventListener("pointermove", (e) => {
     pinch = d;
     return;
   }
-  if (mode !== "orbit") return;
   orbit.vx = dx; orbit.vy = dy;
   rotateOrbit(dx, dy);
   orbit.idle = 0;
