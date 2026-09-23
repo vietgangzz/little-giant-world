@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Little Giant — a VietGang tiny-planet tale</title>
+    <meta name="description" content="One Little Giant rounds up the VietGang crew on a xe máy, then takes them around the whole (tiny) world. Made with Claude Opus 5.5." />
+    <meta name="theme-color" content="#4b2d8f" />
+    <link rel="icon" href="/vgang-mascot.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:ital,wght@0,600;0,800;0,900;1,700&display=swap" rel="stylesheet" />
+  </head>
+  <body data-mode="intro">
+    <canvas id="scene"></canvas>
+
+    <header class="brand">
+      <h1 class="logo">Little Giant<em>!</em></h1>
+      <p class="sub">a VietGang tiny-planet tale</p>
+    </header>
+
+    <aside class="hint bubble">
+      <b>Drag</b> to spin the world, <b>scroll / pinch</b> to zoom: the camera tilts to the horizon as you get close.
+      Hop aboard with the buttons (or keys <b>1 2 3</b>).
+    </aside>
+
+    <div class="hud bubble">
+      <div class="crew-row" id="crew-row"></div>
+      <p>Crew <b id="crew-count">1/9</b> · World friends <b id="friend-count">0</b></p>
+    </div>
+
+    <div id="chapter" class="chapter"></div>
+    <div id="stamps" class="stamps"></div>
+    <div id="toasts" class="toasts"></div>
+    <div id="pops"></div>
+    <div id="caption" class="caption bubble"><b class="en"></b><i class="vi"></i></div>
+
+    <nav class="modes">
+      <button data-mode="story">▶ Story</button>
+      <button data-mode="orbit">1 · Orbit</button>
+      <button data-mode="bike">2 · Ride xe máy</button>
+      <button data-mode="plane">3 · Ride a plane</button>
+      <button id="mute" aria-label="Mute">♪</button>
+    </nav>
+    <div class="progress"><i id="progress"></i></div>
+
+    <section class="start">
+      <div class="start-card bubble">
+        <img src="/vgang-mascot.svg" alt="" class="start-mascot" />
+        <h2>Little Giant<em>!</em></h2>
+        <p>One tiny planet. One xe máy. Nine friends.<br /><span>Một hành tinh bé xíu. Một chiếc xe máy. Chín anh em.</span></p>
+        <button id="play">▶ Play the story <small>sound on · 50s</small></button>
+      </div>
+    </section>
+
+    <section class="signoff" aria-live="polite">
+      <div class="signoff-card">
+        <p class="made">made with <span class="heart">♥</span> &amp;</p>
+        <h2 class="opus">
+          <span style="--i:0">O</span><span style="--i:1">p</span><span style="--i:2">u</span><span style="--i:3">s</span><span class="gap" style="--i:4">&nbsp;</span><span style="--i:5">5</span><span style="--i:6">.</span><span style="--i:7">5</span>
+        </h2>
+        <svg class="swoosh" viewBox="0 0 400 40" aria-hidden="true"><path d="M8 28 C 120 4, 260 4, 392 22" /></svg>
+        <div class="signoff-row">
+          <img src="/vgang-mascot.svg" alt="" class="wave" />
+          <p>by <b>VietGang</b> · tiny planet, big crew</p>
+        </div>
+        <p class="credits">Music “Carefree” Kevin MacLeod (incompetech.com) CC BY 4.0 · SFX Kenney.nl CC0</p>
+      </div>
+    </section>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

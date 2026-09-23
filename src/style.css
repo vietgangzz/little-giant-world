@@ -1,0 +1,238 @@
+:root {
+  --ink: #24163f;
+  --paper: #fff8e7;
+  --sun: #ffd23f;
+  --red: #e63946;
+  --lime: #c6df70;
+  --space: #4b2d8f;
+  --shadow: 4px 4px 0 var(--ink);
+  font-family: "Nunito", system-ui, sans-serif;
+  color: var(--ink);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--space); }
+body { -webkit-font-smoothing: antialiased; user-select: none; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#scene:active { cursor: grabbing; }
+button { font: inherit; color: inherit; }
+
+.bubble {
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+/* ------------------------------------------------------------ brand */
+.brand { position: fixed; top: 14px; left: 18px; z-index: 5; pointer-events: none; }
+.logo, .start-card h2 {
+  margin: 0;
+  font: 400 clamp(38px, 5.4vw, 64px) / 0.9 "Bangers", Impact, sans-serif;
+  letter-spacing: 0.02em;
+  color: var(--sun);
+  -webkit-text-stroke: 2px var(--ink);
+  text-shadow: 3px 3px 0 var(--red), 5px 5px 0 var(--ink);
+  transform: rotate(-3deg);
+}
+.logo em, .start-card h2 em { font-style: normal; color: var(--red); -webkit-text-stroke: 2px var(--ink); text-shadow: 3px 3px 0 var(--ink); }
+.sub {
+  margin: 6px 0 0 6px; font: 800 13px/1 "Nunito"; color: #fff; letter-spacing: 0.04em;
+  text-shadow: 0 1px 0 var(--ink), 1px 0 0 var(--ink), 0 -1px 0 var(--ink), -1px 0 0 var(--ink);
+}
+
+.hint {
+  position: fixed; top: 108px; left: 18px; z-index: 5; max-width: 270px; padding: 10px 13px;
+  font: 600 13.5px/1.35 "Nunito"; opacity: 0; transform: translateY(-6px); transition: 0.35s;
+}
+.hint::after { content: ""; position: absolute; left: 26px; bottom: -11px; width: 16px; height: 10px; background: var(--ink); clip-path: polygon(0 0, 100% 0, 30% 100%); }
+body[data-mode="orbit"] .hint, body[data-mode="bike"] .hint, body[data-mode="plane"] .hint { opacity: 1; transform: none; }
+
+/* -------------------------------------------------------------- hud */
+.hud {
+  position: fixed; top: 16px; right: 18px; z-index: 5; padding: 8px 12px 7px; pointer-events: none;
+  opacity: 0; transition: 0.4s; transform: translateY(-8px);
+}
+body[data-mode="story"] .hud, body.ended .hud { opacity: 1; transform: none; }
+.hud p { margin: 5px 0 0; font: 800 12px/1 "Nunito"; text-align: right; }
+.crew-row { display: flex; gap: 3px; justify-content: flex-end; }
+.crew-row i {
+  width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink); background: var(--c); overflow: hidden;
+  filter: grayscale(1) opacity(0.28); transform: scale(0.8); transition: 0.4s cubic-bezier(.3, 1.8, .5, 1);
+}
+.crew-row i img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.crew-row i.on { filter: none; transform: scale(1); }
+
+/* ---------------------------------------------------------- chapter */
+.chapter {
+  position: fixed; top: 22px; left: 50%; z-index: 6; pointer-events: none; text-align: center;
+  transform: translate(-50%, -140%); opacity: 0;
+}
+.chapter b {
+  display: inline-block; padding: 6px 16px 4px; background: var(--red); color: #fff; border: 3px solid var(--ink);
+  border-radius: 10px; box-shadow: var(--shadow); font: 400 26px/1 "Bangers"; letter-spacing: 0.06em;
+}
+.chapter i { display: block; margin-top: 7px; font: italic 700 14px/1 "Nunito"; color: #fff; text-shadow: 0 2px 0 var(--ink); }
+.chapter.show { animation: chapter 2.8s cubic-bezier(.3, 1.6, .5, 1) forwards; }
+@keyframes chapter {
+  0% { transform: translate(-50%, -140%) rotate(-4deg); opacity: 0; }
+  14%, 82% { transform: translate(-50%, 0) rotate(-2deg); opacity: 1; }
+  100% { transform: translate(-50%, -140%) rotate(0deg); opacity: 0; }
+}
+
+/* ---------------------------------------------------------- caption */
+.caption {
+  position: fixed; left: 50%; bottom: 92px; z-index: 6; max-width: min(640px, 92vw); padding: 12px 20px 11px;
+  text-align: center; pointer-events: none; opacity: 0; transform: translate(-50%, 16px) scale(0.92);
+}
+.caption.show { animation: caption 0.5s cubic-bezier(.3, 1.7, .5, 1) forwards; }
+@keyframes caption { to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+.caption .en { display: block; font: 900 clamp(17px, 2.2vw, 24px)/1.2 "Nunito"; }
+.caption .vi { display: block; margin-top: 4px; font: italic 700 clamp(13px, 1.5vw, 16px)/1.2 "Nunito"; color: #7a4bb8; }
+body.signing .caption { opacity: 0 !important; animation: none; }
+
+/* ----------------------------------------------------------- toasts */
+.toasts { position: fixed; right: 18px; top: 92px; z-index: 6; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; }
+.toast {
+  display: flex; align-items: center; gap: 9px; padding: 6px 14px 6px 6px; background: var(--paper);
+  border: 3px solid var(--ink); border-radius: 999px; box-shadow: var(--shadow); font: 800 14px/1 "Nunito";
+  animation: toast-in 0.45s cubic-bezier(.3, 1.8, .5, 1);
+}
+.toast img, .toast b {
+  width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--ink); background: var(--c); object-fit: cover;
+  display: grid; place-items: center; color: var(--ink);
+}
+.toast.out { transition: 0.4s; opacity: 0; transform: translateX(30px); }
+@keyframes toast-in { from { opacity: 0; transform: translateX(60px) scale(0.6); } }
+
+/* ----------------------------------------------------------- stamps */
+.stamps { position: fixed; left: 18px; bottom: 90px; z-index: 5; display: flex; flex-direction: column-reverse; gap: 6px; pointer-events: none; }
+.stamp {
+  padding: 5px 10px 3px; border: 3px double var(--red); border-radius: 8px; color: var(--red); background: rgb(255 248 231 / 0.85);
+  font: 400 19px/1 "Bangers"; letter-spacing: 0.08em; transform: rotate(var(--r));
+  animation: stamp 0.45s cubic-bezier(.2, 1.9, .4, 1);
+}
+.stamp::before { content: "✓ "; }
+@keyframes stamp { from { transform: rotate(var(--r)) scale(2.6); opacity: 0; } }
+
+/* ------------------------------------------------------------- pops */
+#pops { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+.pop { position: absolute; left: 0; top: 0; will-change: transform; }
+.pop span {
+  position: absolute; transform: translate(-50%, -50%); display: grid; place-items: center; padding: 22px 26px;
+  background: var(--sun); color: var(--red); font: 400 26px/1 "Bangers"; letter-spacing: 0.04em; white-space: nowrap;
+  -webkit-text-stroke: 1.2px var(--ink);
+  clip-path: polygon(50% 0%, 61% 22%, 86% 9%, 79% 35%, 100% 44%, 80% 58%, 93% 83%, 66% 76%, 55% 100%, 43% 78%, 17% 92%, 22% 66%, 0% 55%, 19% 40%, 8% 14%, 35% 22%);
+  animation: pop 1.1s cubic-bezier(.2, 1.8, .4, 1) forwards;
+  filter: drop-shadow(3px 3px 0 var(--ink));
+}
+@keyframes pop {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); }
+  25% { transform: translate(-50%, -80%) scale(1.1) rotate(-6deg); }
+  75% { transform: translate(-50%, -95%) scale(1) rotate(-3deg); opacity: 1; }
+  100% { transform: translate(-50%, -110%) scale(0.7) rotate(0deg); opacity: 0; }
+}
+
+/* ------------------------------------------------------------- nav */
+.modes {
+  position: fixed; left: 50%; bottom: 24px; z-index: 7; display: flex; gap: 10px; transform: translateX(-50%);
+  flex-wrap: wrap; justify-content: center; width: max-content; max-width: 96vw;
+}
+.modes button {
+  padding: 9px 15px 7px; border: 3px solid var(--ink); border-radius: 12px; background: var(--paper); cursor: pointer;
+  font: 400 19px/1 "Bangers"; letter-spacing: 0.06em; box-shadow: var(--shadow); transition: transform 0.12s, box-shadow 0.12s, background 0.2s;
+}
+.modes button:hover { transform: translate(-1px, -2px); box-shadow: 5px 6px 0 var(--ink); }
+.modes button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.modes button.on { background: var(--sun); }
+#mute.muted { background: #cfc6e6; text-decoration: line-through; }
+body[data-mode="story"]:not(.ended) .modes { opacity: 0.35; }
+body[data-mode="story"] .modes:hover { opacity: 1; }
+body.ended .modes button[data-mode="story"] { background: var(--red); color: #fff; }
+
+.progress { position: fixed; left: 0; right: 0; bottom: 0; height: 5px; z-index: 7; background: rgb(0 0 0 / 0.2); }
+.progress i { display: block; height: 100%; background: var(--sun); transform-origin: left; transform: scaleX(0); }
+body:not([data-mode="story"]) .progress { opacity: 0; }
+
+/* ----------------------------------------------------------- start */
+.start {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px;
+  background: radial-gradient(circle at 50% 60%, rgb(75 45 143 / 0.25), rgb(30 16 60 / 0.72));
+  transition: opacity 0.6s, visibility 0.6s;
+}
+body.started .start { opacity: 0; visibility: hidden; }
+.start-card { position: relative; width: min(440px, 100%); padding: 44px 26px 24px; text-align: center; animation: float 3s ease-in-out infinite; }
+.start-card h2 { font-size: clamp(46px, 11vw, 64px); }
+.start-card p { font: 800 16px/1.4 "Nunito"; margin: 14px 0 18px; }
+.start-card p span { font: italic 700 14px/1.4 "Nunito"; color: #7a4bb8; }
+.start-mascot { position: absolute; width: 92px; top: -58px; left: 50%; transform: translateX(-50%); animation: hop 1.1s cubic-bezier(.3, 0, .4, 1) infinite; }
+#play {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 4px; padding: 13px 26px 10px; border: 3px solid var(--ink);
+  border-radius: 14px; background: var(--red); color: #fff; font: 400 30px/1 "Bangers"; letter-spacing: 0.05em; cursor: pointer;
+  box-shadow: var(--shadow); transition: transform 0.12s;
+}
+#play small { font: 800 11px/1 "Nunito"; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.9; }
+#play:hover { transform: translate(-1px, -2px) rotate(-1deg); }
+@keyframes float { 50% { transform: translateY(-6px) rotate(-0.6deg); } }
+@keyframes hop {
+  0%, 100% { transform: translate(-50%, 0) scale(1.08, 0.92); }
+  45% { transform: translate(-50%, -22px) scale(0.94, 1.06); }
+}
+
+/* --------------------------------------------------------- sign-off */
+.signoff { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; pointer-events: none; visibility: hidden; opacity: 0; transition: opacity 0.5s;
+  background: radial-gradient(ellipse at 50% 48%, rgb(36 22 63 / 0.62), rgb(36 22 63 / 0.15) 60%, transparent 80%); }
+body.signing .signoff { opacity: 1; }
+body.signing .signoff { visibility: visible; }
+.signoff-card { text-align: center; transform: translateY(-4vh); }
+.made {
+  margin: 0; font: italic 900 clamp(18px, 2.4vw, 28px)/1 "Nunito"; color: #fff; text-shadow: 2px 2px 0 var(--ink);
+  opacity: 0; transform: translateY(10px);
+}
+body.signing .made { animation: rise 0.5s 0.1s ease-out forwards; }
+.heart { color: #ff5c7a; display: inline-block; }
+body.signing .heart { animation: beat 0.7s 0.6s ease-in-out infinite; }
+.opus { margin: 6px 0 0; font: 400 clamp(76px, 15vw, 180px)/0.95 "Bangers"; letter-spacing: 0.02em; white-space: nowrap; }
+.opus span {
+  display: inline-block; color: var(--sun); -webkit-text-stroke: 3px var(--ink);
+  text-shadow: 4px 4px 0 var(--red), 8px 8px 0 var(--ink); opacity: 0; transform: translateY(-60vh) rotate(-30deg);
+}
+.opus .gap { width: 0.25em; }
+body.signing .opus span { animation: drop 0.75s calc(0.35s + var(--i) * 0.08s) cubic-bezier(.25, 1.6, .45, 1) forwards, wobble 2.4s calc(1.6s + var(--i) * 0.12s) ease-in-out infinite; }
+.swoosh { display: block; width: min(520px, 70vw); margin: -6px auto 0; overflow: visible; }
+.swoosh path { fill: none; stroke: var(--red); stroke-width: 9; stroke-linecap: round; stroke-dasharray: 420; stroke-dashoffset: 420; filter: drop-shadow(3px 3px 0 var(--ink)); }
+body.signing .swoosh path { animation: draw 0.6s 1.2s ease-out forwards; }
+.signoff-row { display: inline-flex; align-items: center; gap: 12px; margin-top: 10px; opacity: 0; }
+body.signing .signoff-row { animation: rise 0.5s 1.6s ease-out forwards; }
+.signoff-row p { margin: 0; padding: 8px 14px; background: var(--paper); border: 3px solid var(--ink); border-radius: 12px; box-shadow: var(--shadow); font: 800 16px/1 "Nunito"; }
+.signoff-row .wave { width: 58px; transform-origin: 50% 90%; }
+body.signing .signoff-row .wave { animation: wave 0.9s 1.8s ease-in-out infinite; }
+.credits { margin: 16px 0 0; font: 700 11px/1.3 "Nunito"; color: rgb(255 255 255 / 0.8); text-shadow: 0 1px 0 var(--ink); opacity: 0; }
+body.signing .credits { animation: rise 0.6s 2.2s ease-out forwards; }
+@keyframes rise { to { opacity: 1; transform: none; } }
+@keyframes drop { to { opacity: 1; transform: none; } }
+@keyframes wobble { 50% { transform: translateY(-8px) rotate(-3deg); } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes beat { 50% { transform: scale(1.35); } }
+@keyframes wave { 50% { transform: rotate(-12deg) translateY(-6px); } }
+body.signing .hud, body.signing .stamps, body.signing .toasts { opacity: 0; transition: 0.4s; }
+
+/* ------------------------------------------------------ clean capture */
+body.clean .modes, body.clean .progress, body.clean .hint { display: none; }
+
+@media (max-width: 640px) {
+  .hint { display: none; }
+  .hud { top: 76px; right: 12px; padding: 6px 8px 5px; }
+  .crew-row i { width: 20px; height: 20px; }
+  .hud p { font-size: 11px; }
+  .chapter { top: 136px; }
+  .chapter b { font-size: 20px; white-space: nowrap; }
+  .caption { bottom: 128px; width: calc(100vw - 32px); }
+  .toasts { top: 84px; right: 12px; }
+  .toast { font-size: 12px; }
+  .stamps { bottom: 240px; left: 12px; }
+  .modes { bottom: 16px; gap: 6px; }
+  .modes button { font-size: 15px; padding: 8px 10px 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-card, .start-mascot { animation: none; }
+}
