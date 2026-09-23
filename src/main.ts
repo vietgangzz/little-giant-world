@@ -2,9 +2,8 @@ import * as THREE from "three";
 import "./style.css";
 import { Sound } from "./audio";
 import { clamp, lerp, smoothstep } from "./noise";
-import {
-  airport, car, clouds, haGiang, haLong, hoiAn, saiGon, smallPlane, starfield, Trails, worldLandmarks,
-} from "./props";
+import { car, clouds, smallPlane, starfield, Trails } from "./props";
+import { airport, haGiang, haLong, hoiAn, saiGon, worldLandmarks } from "./scenery";
 import { CAPTIONS, CHAPTERS, CREW, LITTLE_GIANT, Story, T, type Cue, type Shot } from "./story";
 import { buildPlanet, buildRoad, heightAt, R, Ring, roadA, roadB, scatterTrees } from "./world";
 
@@ -59,7 +58,11 @@ scene.add(sun, sun.target);
 /* --------------------------------------------------------------- world */
 
 const planet = buildPlanet();
-scene.add(planet, buildRoad(roadA), buildRoad(roadB), scatterTrees(), haGiang(), haLong(), hoiAn(), saiGon(), airport(), worldLandmarks());
+const trees = scatterTrees();
+scene.add(planet, buildRoad(roadA), buildRoad(roadB), trees.group, haGiang(), haLong(), hoiAn(), saiGon(), airport(), worldLandmarks());
+// boats, rafts and river lanterns rock gently on the water
+const bobbers: { obj: THREE.Object3D; base: THREE.Vector3; phase: number }[] = [];
+scene.traverse((o) => { if (o.userData.bob !== undefined) bobbers.push({ obj: o, base: o.position.clone(), phase: o.userData.bob }); });
 const sky3d = clouds();
 scene.add(sky3d.group);
 const trails = new Trails();
@@ -118,9 +121,37 @@ function rotateOrbit(dx: number, dy: number) {
 }
 const camLook = new THREE.Vector3();
 const camUp = new THREE.Vector3(0, 1, 0);
+/** The ground (or sea) radius under a point, plus a margin. */
+function floorAt(p: THREE.Vector3, margin: number) {
+  return R + Math.max(heightAt(p), 0.06) + margin;
+}
+/**
+ * Keeps a camera position out of the hills: never below the ground, and raised
+ * until nothing on the planet stands between it and what it is looking at.
+ */
+function clearView(pos: THREE.Vector3, look: THREE.Vector3) {
+  const p = pos.clone();
+  if (p.length() > R + 4) return p;
+  for (let pass = 0; pass < 6; pass++) {
+    let worst = 0;
+    const floor = floorAt(p, 0.22);
+    if (p.length() < floor) worst = floor - p.length();
+    for (let i = 1; i < 12; i++) {
+      const q = p.clone().lerp(look, i / 12);
+      const need = floorAt(q, 0.04) - q.length();
+      // obstacles near the camera cost more height to clear than ones near the subject
+      if (need > 0) worst = Math.max(worst, need * (1.3 - i / 12));
+    }
+    if (worst <= 0) break;
+    p.addScaledVector(p.clone().normalize(), worst + 0.05);
+  }
+  return p;
+}
 function applyShot(shot: Shot, dt: number, snap = false) {
   const k = snap ? 1 : 1 - Math.exp(-dt * shot.stiffness);
-  camera.position.lerp(shot.pos, k);
+  camera.position.lerp(clearView(shot.pos, shot.look), k);
+  const floor = floorAt(camera.position, 0.18);
+  if (camera.position.length() < floor) camera.position.setLength(floor);
   camLook.lerp(shot.look, k);
   camUp.lerp(shot.up, k).normalize();
   camera.up.copy(camUp);
@@ -137,9 +168,19 @@ let storyTime = 0;
 let playing = false;
 let freeTime = 0;
 let started = false;
+/** QA only: pins the camera to an exact shot. */
+let debugShot: Shot | null = null;
 const clean = params.has("clean");
 document.body.classList.toggle("clean", clean);
 
+// the sign-off parades the whole crew under the VG TEAM title
+[LITTLE_GIANT, ...CREW].forEach((m, i) => {
+  const face = document.createElement("i");
+  face.style.setProperty("--c", `#${m.color.toString(16).padStart(6, "0")}`);
+  face.style.setProperty("--i", String(i));
+  face.innerHTML = `<img src="${m.portrait}" alt="${m.name}" />`;
+  $("#signoff-crew").append(face);
+});
 const crewRow = $("#crew-row");
 [LITTLE_GIANT, ...CREW].forEach((m, i) => {
   const face = document.createElement("i");
@@ -383,7 +424,8 @@ function frame() {
     }
     shot = free ?? orbitShot();
   }
-  applyShot(shot, dt, false);
+  if (debugShot) shot = debugShot;
+  applyShot(shot, dt, !!debugShot);
   updateCaption(storyTime);
 
   // world life
@@ -405,11 +447,10 @@ function frame() {
     f.mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3().crossVectors(up, fwd), up, fwd));
     if (emit) trails.emit(f.mesh.position.clone().addScaledVector(fwd, -0.2), now);
   });
-  const plane = story.plane.group;
-  if (plane.visible && emit && (mode === "plane" || storyTime > T.takeoff + 0.6)) {
-    for (const x of [-0.75, 0.75]) trails.emit(new THREE.Vector3(x, -0.05, 0.05).applyMatrix4(plane.matrixWorld), now);
-  }
+  for (const p of story.puffs.splice(0)) trails.emit(p, now);
   trails.update(now, 1);
+  trees.update(camera.position);
+  bobbers.forEach((b) => b.obj.position.copy(b.base).addScaledVector(b.base.clone().normalize(), Math.sin(now * 1.6 + b.phase) * 0.008));
 
   // sky: space far out, day-blue near the ground
   const alt = camera.position.length();
@@ -467,6 +508,26 @@ if (params.has("debug")) {
       },
       mode: setMode,
       orbit,
+      story,
+      THREE,
+      camera,
+      time: () => storyTime,
+      /** Pin the camera relative to an object's own axes (forward, right, up), in world units. */
+      frame(o: THREE.Object3D, f: number, r: number, u: number, lookUp = 0.15, fov = 35) {
+        o.updateMatrixWorld();
+        const p = o.getWorldPosition(new THREE.Vector3());
+        const q = o.getWorldQuaternion(new THREE.Quaternion());
+        const up = p.clone().normalize();
+        const pos = p.clone().addScaledVector(new THREE.Vector3(0, 0, 1).applyQuaternion(q), f)
+          .addScaledVector(new THREE.Vector3(1, 0, 0).applyQuaternion(q), r).addScaledVector(up, u);
+        debugShot = { pos, look: p.clone().addScaledVector(up, lookUp), up, stiffness: 100, fov };
+      },
+      /** Pin the camera: positions in world units, `up` defaults to the local vertical. */
+      cam(pos: number[] | null, look?: number[], fov = 45) {
+        if (!pos) { debugShot = null; return; }
+        const p = new THREE.Vector3(...(pos as [number, number, number]));
+        debugShot = { pos: p, look: new THREE.Vector3(...(look as [number, number, number])), up: p.clone().normalize(), stiffness: 100, fov };
+      },
     },
   });
 }

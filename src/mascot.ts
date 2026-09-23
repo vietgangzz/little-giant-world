@@ -1,49 +1,59 @@
 import * as THREE from "three";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
-import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { dome, inflate, signedDistance } from "./inflate";
 import { mascotArtwork } from "./mascotArtwork";
 import { inked, toon } from "./toon";
 
-/** Little Giant in mascot units: 2 tall, feet at y=0, facing +Z, ±1.12 wide. */
-let shared: { body: THREE.BufferGeometry; eyes: THREE.BufferGeometry[]; eyeZ: number } | null = null;
+/** Little Giant in mascot units: 2 tall, feet at y=0, facing +Z, ±1.12 wide, ±0.7 deep. */
+type Art = { body: THREE.BufferGeometry; eyes: THREE.BufferGeometry[]; surface: (x: number, y: number) => number };
+let shared: Art | null = null;
+/** Half-depth at the fattest point: the body is an oval pebble, not a slab. */
+const BODY_DEPTH = 0.7;
 
-function extrude(shapes: THREE.Shape[], depth: number, bevel: number) {
-  const source = new THREE.ExtrudeGeometry(shapes, {
-    depth, steps: 1, curveSegments: 18, bevelEnabled: true,
-    bevelSize: bevel, bevelThickness: bevel, bevelSegments: 6,
-  });
-  source.deleteAttribute("normal");
-  source.deleteAttribute("uv");
-  const geometry = mergeVertices(source, 0.0001);
-  source.dispose();
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-function artwork() {
+function artwork(): Art {
   if (shared) return shared;
   const svg = new SVGLoader().parse(
     `<svg xmlns="http://www.w3.org/2000/svg"><path d="${mascotArtwork.body}"/>${mascotArtwork.eyes
       .map(({ path }) => `<path d="${path}"/>`).join("")}</svg>`,
   );
-  const body = extrude(svg.paths[0].toShapes(), 66, 20);
-  body.computeBoundingBox();
-  const box = body.boundingBox!;
-  const scale = 2 / (box.max.y - box.min.y);
-  const cx = (box.min.x + box.max.x) / 2, floor = box.max.y;
-  const orient = (g: THREE.BufferGeometry, depth: number) => {
-    g.translate(-cx, -floor, -depth / 2);
-    g.rotateX(Math.PI);
-    g.scale(scale, scale, scale);
+  const outline = (path: (typeof svg.paths)[number]) => {
+    const pts = path.toShapes()[0].getPoints(10);
+    if (pts.length > 1 && pts[0].distanceTo(pts[pts.length - 1]) < 1e-6) pts.pop();
+    return pts;
   };
-  orient(body, 66);
-  const eyes = svg.paths.slice(1).map((p) => {
-    const g = extrude(p.toShapes(), 4, 1.5);
-    orient(g, 4);
-    return g;
-  });
-  shared = { body, eyes, eyeZ: (33 + 20 + 0.6) * scale };
+  const rawBody = outline(svg.paths[0]);
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  rawBody.forEach((p) => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); });
+  const scale = 2 / (maxY - minY), cx = (minX + maxX) / 2;
+  // SVG y runs down; flip it so the feet sit on y=0
+  const place = (p: THREE.Vector2) => new THREE.Vector2((p.x - cx) * scale, (maxY - p.y) * scale);
+  const body = rawBody.map(place);
+
+  // the deepest point inside the silhouette sets how round the dome is
+  let reach = 0;
+  for (let y = 0; y <= 2; y += 0.05) for (let x = -1.2; x <= 1.2; x += 0.05) reach = Math.max(reach, signedDistance(x, y, body).d);
+  const surface = (x: number, y: number) => {
+    const d = signedDistance(x, y, body).d;
+    return d > 0 ? BODY_DEPTH * dome(d, reach) : 0;
+  };
+  const bodyGeo = inflate(body, 84, (_x, _y, d) => BODY_DEPTH * dome(d, reach));
+  // eyes are glossy decals lifted off the curved face, each with its own small bulge
+  const eyes = svg.paths.slice(1).map((p) =>
+    inflate(outline(p).map(place), 26, (x, y, d) => surface(x, y) + 0.018 + 0.05 * dome(d, 0.07), false));
+  shared = { body: bodyGeo, eyes, surface };
   return shared;
+}
+
+/** Orients a flat decal so it lies on the body surface at (x, y). */
+function onSurface(object: THREE.Object3D, surface: Art["surface"], x: number, y: number, lift: number) {
+  const e = 0.02;
+  const n = new THREE.Vector3(
+    -(surface(x + e, y) - surface(x - e, y)) / (2 * e),
+    -(surface(x, y + e) - surface(x, y - e)) / (2 * e),
+    1,
+  ).normalize();
+  object.position.set(x, y, surface(x, y)).addScaledVector(n, lift);
+  object.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
 }
 
 /** The nón lá lathe profile from the landing page, apex first. */
@@ -74,24 +84,22 @@ export class Mascot {
 
   constructor(readonly color: number, options: MascotOptions = {}) {
     const art = artwork();
-    const body = inked(art.body, toon(color), 0.05);
+    const body = inked(art.body, toon(color), 0.045);
     const eyeMaterial = toon(options.eyes ?? 0x1c2e24);
-    art.eyes.forEach((g) => {
-      const eye = new THREE.Mesh(g, eyeMaterial);
-      eye.position.z = art.eyeZ;
-      this.rig.add(eye);
-    });
+    art.eyes.forEach((g) => this.rig.add(new THREE.Mesh(g, eyeMaterial)));
     // Eye sparkle, the one detail that makes it read as cute at a distance.
-    const sparkle = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    [[-0.25, 1.1], [0.53, 1.07]].forEach(([x, y]) => {
+    const sparkle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    [[-0.24, 1.1, 0.075], [0.54, 1.06, 0.075], [-0.1, 0.9, 0.08]].forEach(([x, y, lift], i) => {
       const s = sparkle.clone();
-      s.position.set(x, y, art.eyeZ + 0.04);
+      if (i === 2) s.scale.setScalar(0.5);
+      onSurface(s, art.surface, x, y, lift);
       this.rig.add(s);
     });
-    const cheek = new THREE.Mesh(new THREE.CircleGeometry(0.11, 16), new THREE.MeshBasicMaterial({ color: 0xff8fa3, transparent: true, opacity: 0.55 }));
-    [[-0.55, 0.74], [0.86, 0.74]].forEach(([x, y]) => {
+    const cheek = new THREE.Mesh(new THREE.CircleGeometry(0.12, 20), new THREE.MeshBasicMaterial({ color: 0xff8fa3, transparent: true, opacity: 0.6, depthWrite: false }));
+    [[-0.55, 0.72], [0.84, 0.72]].forEach(([x, y]) => {
       const c = cheek.clone();
-      c.position.set(x, y, art.eyeZ + 0.02);
+      onSurface(c, art.surface, x, y, 0.012);
+      c.scale.set(1.2, 0.8, 1);
       this.rig.add(c);
     });
     this.rig.add(body);
@@ -101,7 +109,7 @@ export class Mascot {
     [this.leftHand, this.rightHand].forEach((hand, i) => {
       const ball = inked(handGeo, handMat, 0.045);
       hand.add(ball);
-      hand.position.set(i ? 1.16 : -1.2, 0.86, 0.2);
+      hand.position.set(i ? 1.16 : -1.2, 0.86, 0.12);
       this.rig.add(hand);
     });
 
@@ -157,10 +165,10 @@ export class Mascot {
     this.rig.rotation.y = spinT >= 0 && spinT < 1 ? spinT * Math.PI * 2 : 0;
 
     const w = this.waving;
-    this.leftHand.position.set(-1.2 - w * 0.1, 0.86 + w * (0.5 + Math.cos(t * 9) * 0.1), 0.2);
+    this.leftHand.position.set(-1.2 - w * 0.1, 0.86 + w * (0.5 + Math.cos(t * 9) * 0.1), 0.1);
     this.leftHand.rotation.z = w * Math.sin(t * 9) * 0.3;
     const up = Math.max(cheer, 0);
-    this.rightHand.position.set(1.16 + up * 0.1, 0.86 + up * (0.55 + Math.sin(t * 9 + 1) * 0.1), 0.2);
+    this.rightHand.position.set(1.16 + up * 0.1, 0.86 + up * (0.55 + Math.sin(t * 9 + 1) * 0.1), 0.1);
     if (this.hat) this.hat.rotation.z = -0.08 + Math.sin(t * 4) * 0.03 + (hopT > 0 && hopT < 1 ? Math.sin(hopT * 12) * 0.08 : 0);
   }
 }

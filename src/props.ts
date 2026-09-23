@@ -1,37 +1,29 @@
 import * as THREE from "three";
 import { rng } from "./noise";
 import { halftone, inked, toon } from "./toon";
-import { makeFlag } from "./mascot";
-import { R, roadA, standOn, STOPS, WORLD, PLAZA } from "./world";
+import { R, roadA, standOn } from "./world";
 
 const random = rng(99);
-const pick = <T,>(list: T[]) => list[Math.floor(random() * list.length)];
 
 export function box(w: number, h: number, d: number, color: number | THREE.Material, ink = 0.012) {
   const g = new THREE.BoxGeometry(w, h, d);
   g.translate(0, h / 2, 0);
   return inked(g, color, ink);
 }
-function cone(r: number, h: number, seg: number, color: number, ink = 0.012) {
+export function cone(r: number, h: number, seg: number, color: number, ink = 0.012) {
   const g = new THREE.ConeGeometry(r, h, seg);
   g.translate(0, h / 2, 0);
   return inked(g, color, ink);
 }
-function cyl(r0: number, r1: number, h: number, seg: number, color: number, ink = 0.012) {
+export function cyl(r0: number, r1: number, h: number, seg: number, color: number, ink = 0.012) {
   const g = new THREE.CylinderGeometry(r1, r0, h, seg);
   g.translate(0, h / 2, 0);
   return inked(g, color, ink);
 }
-function glow(color: number) {
+export function glow(color: number) {
   return new THREE.MeshToonMaterial({ color, emissive: color, emissiveIntensity: 0.8, gradientMap: toon(color).gradientMap });
 }
 
-/** A site is a group standing on the planet, with local +Y = up. */
-function site(direction: THREE.Vector3, heading?: THREE.Vector3, lift = 0) {
-  const g = new THREE.Group();
-  standOn(g, direction, lift, 0, heading);
-  return g;
-}
 /** Local frame helpers for a direction beside road A. */
 export function roadFrame(theta: number) {
   const up = roadA.dir(theta);
@@ -41,458 +33,146 @@ export function roadFrame(theta: number) {
   const right = side.clone().negate();
   return { up, fwd, side, right };
 }
-function besideRoad(theta: number, offset: number) {
-  const { up, side } = roadFrame(theta);
-  return up.clone().multiplyScalar(R).addScaledVector(side, offset).normalize();
-}
+/* --------------------------------------------------------------- vehicles */
 
-/* ---------------------------------------------------------------- houses */
-
-function house(wall: number, roof: number, s = 1) {
-  const g = new THREE.Group();
-  g.add(box(0.2 * s, 0.14 * s, 0.16 * s, wall));
-  const r = cone(0.17 * s, 0.1 * s, 4, roof);
-  r.position.y = 0.14 * s;
-  r.rotation.y = Math.PI / 4;
-  r.scale.set(1, 1, 0.8);
-  g.add(r);
-  const door = new THREE.Mesh(new THREE.PlaneGeometry(0.05 * s, 0.08 * s), toon(0x3b2340));
-  door.position.set(0, 0.04 * s, 0.081 * s);
-  g.add(door);
-  return g;
-}
-function scatterOn(parent: THREE.Group, center: THREE.Vector3, count: number, spread: number, make: (i: number) => THREE.Object3D, avoidRoad = 0.05) {
-  let placed = 0, tries = 0;
-  const { up } = { up: center.clone().normalize() };
-  const t1 = new THREE.Vector3(up.y, -up.x, 0.3).cross(up).normalize();
-  const t2 = new THREE.Vector3().crossVectors(up, t1);
-  while (placed < count && tries++ < count * 20) {
-    const a = random() * Math.PI * 2, r = Math.sqrt(random()) * spread;
-    const d = up.clone().multiplyScalar(R).addScaledVector(t1, Math.cos(a) * r).addScaledVector(t2, Math.sin(a) * r).normalize();
-    if (Math.abs(d.dot(roadA.normal)) < avoidRoad / R) continue;
-    const o = make(placed);
-    standOn(o, d, 0, random() * 6.28);
-    parent.add(o);
-    placed++;
-  }
-}
-
-/* ------------------------------------------------------- Vietnam, chapter by chapter */
-
-export function haGiang() {
-  const g = new THREE.Group();
-  const home = besideRoad(STOPS.home, 0.55);
-  // the Little Giant's own house, a stilt house with a warm window
-  const hut = new THREE.Group();
-  [[-0.1, -0.08], [0.1, -0.08], [-0.1, 0.08], [0.1, 0.08]].forEach(([x, z]) => {
-    const post = cyl(0.015, 0.015, 0.1, 5, 0x6b4a3a, 0.006);
-    post.position.set(x, 0, z);
-    hut.add(post);
-  });
-  const hh = house(0xe8c79a, 0x8a4a3b, 1.5);
-  hh.position.y = 0.1;
-  hut.add(hh);
-  standOn(hut, home, 0, 0, roadFrame(STOPS.home).side.negate());
-  g.add(hut);
-  // rice terraces: stacked discs, alternating the two greens of young and ripe rice
-  [[0.1, 0.95], [0.3, -0.85], [-0.2, 1.05], [0.55, -0.95]].forEach(([dt, off], k) => {
-    const hill = new THREE.Group();
-    const steps = 5 + k % 2;
-    for (let i = 0; i < steps; i++) {
-      const r = 0.42 - i * 0.07;
-      const disc = cyl(r, r * 0.97, 0.07, 22, i % 2 ? 0xc6e05a : 0x7ccf4a, 0.01);
-      disc.position.y = i * 0.07 - 0.05;
-      hill.add(disc);
-    }
-    standOn(hill, besideRoad(STOPS.home + dt, off), -0.02);
-    g.add(hill);
-  });
-  scatterOn(g, besideRoad(STOPS.haGiang, -0.62), 5, 0.3, () => house(pick([0xf3e3c3, 0xe8c79a]), pick([0x8a4a3b, 0x5d6a8a])));
-  // Lũng Cú: the flag on the northern tip
-  const flag = makeFlag(["#da251d"], 1.3);
-  flag.scale.setScalar(0.35);
-  standOn(flag, besideRoad(-0.34, -0.1), 0);
-  g.add(flag);
-  return g;
-}
-
-export function haLong() {
-  const g = new THREE.Group();
-  const shape = (h: number) => {
-    const pts: THREE.Vector2[] = [];
-    for (let i = 0; i <= 8; i++) {
-      const t = i / 8;
-      pts.push(new THREE.Vector2(0.16 * (1 - Math.pow(t, 2.5)) + 0.02 * Math.sin(t * 9), t * h));
-    }
-    pts.push(new THREE.Vector2(0, h));
-    return new THREE.LatheGeometry(pts, 9);
-  };
-  for (let i = 0; i < 26; i++) {
-    const t = STOPS.haLong + (random() - 0.5) * 0.42;
-    const off = (random() < 0.5 ? -1 : 1) * (0.8 + random() * 1.3);
-    const k = new THREE.Group();
-    const h = 0.35 + random() * 0.55;
-    const rock = inked(shape(h), 0xa89cb6, 0.012);
-    const cap = inked(new THREE.IcosahedronGeometry(0.1, 1), 0x3fae4c, 0.01);
-    cap.position.y = h * 0.92;
-    cap.scale.set(1, 0.6, 1);
-    k.add(rock, cap);
-    k.scale.setScalar(0.8 + random() * 0.6);
-    standOn(k, besideRoad(t, off), -0.15, random() * 6);
-    g.add(k);
-  }
-  // a junk boat with red sails
-  const boat = new THREE.Group();
-  const hull = box(0.32, 0.06, 0.1, 0x7a4b3a);
-  boat.add(hull);
-  [-0.08, 0.06].forEach((x) => {
-    const sail = inked(new THREE.PlaneGeometry(0.1, 0.16), new THREE.MeshToonMaterial({ color: 0xe0503a, side: THREE.DoubleSide }), 0);
-    sail.position.set(x, 0.14, 0);
-    boat.add(sail);
-  });
-  boat.rotation.y = 1.2;
-  standOn(boat, besideRoad(STOPS.haLong + 0.05, 0.55), 0);
-  boat.userData.bob = true;
-  g.add(boat);
-  return g;
-}
-
-export function hoiAn() {
-  const g = new THREE.Group();
-  const center = besideRoad(STOPS.hoiAn, -0.42);
-  scatterOn(g, center, 9, 0.38, () => house(0xf7c948, pick([0x9c4a2f, 0x7a3b2a]), 1.1), 0.36);
-  // lantern strings across the road
-  const colors = [0xff4d4d, 0xffc53d, 0xff8a3d, 0xe23d8a, 0x7cd35d];
-  for (let s = -2; s <= 2; s++) {
-    const t = STOPS.hoiAn + s * 0.022;
-    const { up, fwd, right } = roadFrame(t);
-    const holder = new THREE.Group();
-    const base = roadA.point(t, 0);
-    holder.position.copy(base);
-    holder.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, fwd));
-    [-0.3, 0.3].forEach((x) => {
-      const pole = cyl(0.012, 0.012, 0.42, 5, 0x6b4a3a, 0.005);
-      pole.position.x = x;
-      holder.add(pole);
-    });
-    for (let i = 0; i < 6; i++) {
-      const x = -0.25 + i * 0.1;
-      const sag = 0.4 - Math.sin(((i + 0.5) / 6) * Math.PI) * 0.06;
-      const lantern = inked(new THREE.SphereGeometry(0.035, 10, 8), glow(colors[(i + s + 5) % colors.length]), 0.008);
-      lantern.scale.set(1, 1.25, 1);
-      lantern.position.set(x, sag, 0);
-      holder.add(lantern);
-    }
-    g.add(holder);
-  }
-  return g;
-}
-
-export function saiGon() {
-  const g = new THREE.Group();
-  const center = besideRoad(STOPS.saiGon, -0.5);
-  const palette = [0xff6b6b, 0xffc93c, 0x6bcBff, 0xa78bfa, 0x5ee6a8, 0xff8fd0, 0xff9f43];
-  scatterOn(g, center, 22, 0.42, () => {
-    const h = 0.12 + random() * 0.35;
-    const b = box(0.1 + random() * 0.06, h, 0.1 + random() * 0.06, pick(palette), 0.01);
-    return b;
-  }, 0.4);
-  // Landmark 81, the tall one on the skyline
-  const tower = new THREE.Group();
-  [[0.16, 0.5], [0.13, 0.38], [0.1, 0.3], [0.07, 0.22], [0.04, 0.16]].reduce((y, [w, h]) => {
-    const b = box(w, h, w, 0xbfd7ea, 0.012);
-    b.position.y = y;
-    tower.add(b);
-    return y + h;
-  }, 0);
-  const spire = cone(0.02, 0.2, 6, 0xdfe9f5, 0.006);
-  spire.position.y = 1.56;
-  tower.add(spire);
-  standOn(tower, besideRoad(STOPS.saiGon + 0.03, -0.62), 0);
-  g.add(tower);
-  return g;
-}
-
-export function airport() {
-  const g = new THREE.Group();
-  const t = STOPS.airport;
-  const tower = new THREE.Group();
-  tower.add(cyl(0.04, 0.035, 0.45, 8, 0xf4f1ff));
-  const cab = cyl(0.08, 0.1, 0.08, 8, 0x7fd6ff);
-  cab.position.y = 0.45;
-  tower.add(cab);
-  standOn(tower, besideRoad(t + 0.03, -0.45), 0);
-  g.add(tower);
-  return g;
-}
-
-/* ----------------------------------------------------------- world stops */
-
-function eiffel() {
-  const g = new THREE.Group();
-  const bronze = 0x8c5a3c;
-  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([x, z]) => {
-    const leg = box(0.06, 0.5, 0.06, bronze, 0.008);
-    leg.position.set(x * 0.2, 0, z * 0.2);
-    leg.rotation.set(-z * 0.32, 0, x * 0.32);
-    g.add(leg);
-  });
-  const deck1 = box(0.36, 0.04, 0.36, bronze);
-  deck1.position.y = 0.44;
-  const mid = cone(0.17, 0.8, 4, bronze, 0.01);
-  mid.position.y = 0.48;
-  mid.rotation.y = Math.PI / 4;
-  const deck2 = box(0.15, 0.03, 0.15, bronze);
-  deck2.position.y = 0.9;
-  const top = cone(0.07, 0.62, 4, bronze, 0.008);
-  top.position.y = 0.92;
-  top.rotation.y = Math.PI / 4;
-  g.add(deck1, mid, deck2, top);
-  g.scale.setScalar(1.4);
-  return g;
-}
-function liberty() {
-  const g = new THREE.Group();
-  g.add(box(0.26, 0.24, 0.26, 0xd8cdb8));
-  const robe = cone(0.12, 0.55, 10, 0x6fc2a5);
-  robe.position.y = 0.24;
-  const head = inked(new THREE.SphereGeometry(0.06, 12, 10), toon(0x6fc2a5), 0.01);
-  head.position.y = 0.82;
-  const arm = cyl(0.02, 0.02, 0.26, 6, 0x6fc2a5, 0.008);
-  arm.position.set(0.07, 0.68, 0);
-  arm.rotation.z = -0.25;
-  const flame = inked(new THREE.SphereGeometry(0.04, 10, 8), glow(0xffc53d), 0.008);
-  flame.position.set(0.14, 0.97, 0);
-  flame.scale.set(1, 1.5, 1);
-  g.add(robe, head, arm, flame);
-  for (let i = 0; i < 5; i++) {
-    const spike = cone(0.012, 0.06, 4, 0x6fc2a5, 0.004);
-    spike.position.set(Math.cos(i * 0.6 - 1.2) * 0.05, 0.86, Math.sin(i * 0.6 - 1.2) * 0.05);
-    spike.rotation.z = -Math.cos(i * 0.6 - 1.2) * 0.6;
-    g.add(spike);
-  }
-  g.scale.setScalar(1.3);
-  return g;
-}
-function manhattan() {
-  const g = new THREE.Group();
-  const colors = [0x9fb3d9, 0xc8d3e8, 0x7f8fb8, 0xe1b8d8, 0xb8e1dc];
-  for (let i = 0; i < 12; i++) {
-    const h = 0.25 + random() * 0.7;
-    const b = box(0.1, h, 0.1, pick(colors), 0.01);
-    b.position.set(0.45 + (i % 4) * 0.13, 0, -0.2 + Math.floor(i / 4) * 0.14);
-    g.add(b);
-  }
-  return g;
-}
-function fuji() {
-  const g = new THREE.Group();
-  const m = cone(1.1, 1.0, 20, 0x6f7fc8, 0.02);
-  m.position.set(-0.8, 0, -0.6);
-  const snow = cone(0.45, 0.42, 20, 0xffffff, 0.015);
-  snow.position.set(-0.8, 0.6, -0.6);
-  g.add(m, snow);
-  const torii = new THREE.Group();
-  [-0.14, 0.14].forEach((x) => { const p = cyl(0.02, 0.02, 0.3, 8, 0xe03a3a, 0.008); p.position.x = x; torii.add(p); });
-  const beam = box(0.42, 0.035, 0.05, 0xe03a3a, 0.008);
-  beam.position.y = 0.3;
-  const beam2 = box(0.34, 0.025, 0.04, 0xe03a3a, 0.008);
-  beam2.position.y = 0.23;
-  torii.add(beam, beam2);
-  torii.position.set(0.3, 0, 0.3);
-  g.add(torii);
-  const pagoda = new THREE.Group();
-  for (let i = 0; i < 4; i++) {
-    const w = 0.16 - i * 0.025;
-    const b = box(w, 0.08, w, 0xf4e6d0, 0.008);
-    b.position.y = i * 0.11;
-    const roof = cone(w * 0.95, 0.05, 4, 0x3b3f63, 0.008);
-    roof.position.y = i * 0.11 + 0.07;
-    roof.rotation.y = Math.PI / 4;
-    pagoda.add(b, roof);
-  }
-  pagoda.position.set(0.55, 0, -0.25);
-  g.add(pagoda);
-  return g;
-}
-function pyramids() {
-  const g = new THREE.Group();
-  [[0, 0, 0.5], [0.55, -0.35, 0.38], [-0.45, 0.3, 0.3]].forEach(([x, z, s]) => {
-    const p = cone(s, s * 1.15, 4, 0xe9c46a, 0.015);
-    p.position.set(x, 0, z);
-    p.rotation.y = Math.PI / 4;
-    g.add(p);
-  });
-  for (let i = 0; i < 4; i++) {
-    const palm = new THREE.Group();
-    const trunk = cyl(0.015, 0.02, 0.22, 5, 0x9c6b3f, 0.006);
-    palm.add(trunk);
-    for (let k = 0; k < 5; k++) {
-      const leaf = box(0.14, 0.01, 0.035, 0x3fae4c, 0.005);
-      leaf.position.y = 0.21;
-      leaf.rotation.set(0, (k / 5) * Math.PI * 2, -0.35);
-      leaf.geometry.translate(0.07, 0, 0);
-      palm.add(leaf);
-    }
-    palm.position.set(0.7 - i * 0.18, 0, 0.5);
-    g.add(palm);
-  }
-  return g;
-}
-function merlion() {
-  const g = new THREE.Group();
-  const base = cyl(0.14, 0.16, 0.1, 12, 0xd8cdb8);
-  const body = cyl(0.09, 0.07, 0.34, 10, 0xf6f4ef);
-  body.position.y = 0.1;
-  const head = inked(new THREE.IcosahedronGeometry(0.1, 1), toon(0xf6f4ef), 0.012);
-  head.position.set(0, 0.5, 0.02);
-  const jet = new THREE.Mesh(
-    new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(0, 0.5, 0.1), new THREE.Vector3(0, 0.7, 0.45), new THREE.Vector3(0, 0.05, 0.75)), 20, 0.02, 6),
-    new THREE.MeshToonMaterial({ color: 0x9fe7ff, emissive: 0x3aa0d0, emissiveIntensity: 0.4 }),
-  );
-  g.add(base, body, head, jet);
-  // Marina Bay Sands: three towers and the ship on top
-  const mbs = new THREE.Group();
-  [-0.18, 0, 0.18].forEach((x) => {
-    const t = box(0.1, 0.6, 0.08, 0xdfe7ef, 0.01);
-    t.position.x = x;
-    t.rotation.z = x * 0.2;
-    mbs.add(t);
-  });
-  const deck = box(0.62, 0.04, 0.1, 0xb9c8d8, 0.01);
-  deck.position.y = 0.6;
-  mbs.add(deck);
-  mbs.position.set(-0.55, 0, -0.35);
-  g.add(mbs);
-  g.scale.setScalar(1.3);
-  return g;
-}
-const LANDMARKS: Record<string, () => THREE.Object3D> = {
-  singapore: merlion,
-  tokyo: fuji,
-  cairo: pyramids,
-  paris: eiffel,
-  newyork: () => { const g = new THREE.Group(); g.add(liberty(), manhattan()); return g; },
-};
-
-export function worldLandmarks() {
-  const g = new THREE.Group();
-  WORLD.forEach((stop) => {
-    const s = site(stop.dir, new THREE.Vector3(0, 1, 0));
-    s.add(LANDMARKS[stop.id]());
-    s.userData.stop = stop.id;
-    // a few local houses
-    scatterOn(g, stop.dir, 6, 0.9, () => house(pick([0xf3e3c3, 0xffd6a5, 0xcfe8ff]), pick([0xe03a5c, 0x5d6a8a, 0x8a4a3b])), 0);
-    g.add(s);
-  });
-  return g;
-}
-
-/* ------------------------------------------------------------ the drum */
-
-function drumTexture() {
+function plateTexture(text: string) {
   const c = document.createElement("canvas");
-  c.width = c.height = 512;
+  c.width = 128; c.height = 64;
   const x = c.getContext("2d")!;
-  const bg = x.createRadialGradient(256, 256, 30, 256, 256, 256);
-  bg.addColorStop(0, "#d9a05a"); bg.addColorStop(0.7, "#b0763a"); bg.addColorStop(1, "#5f8f7a");
-  x.fillStyle = bg;
-  x.fillRect(0, 0, 512, 512);
-  x.translate(256, 256);
-  x.strokeStyle = "#6e3f1f";
-  // concentric bands with ticks and birds-in-flight dashes
-  for (let r = 78; r < 250; r += 42) {
-    x.lineWidth = 4;
-    x.beginPath(); x.arc(0, 0, r, 0, Math.PI * 2); x.stroke();
-    const n = Math.floor(r / 5);
-    x.lineWidth = 2;
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2;
-      if (Math.round((r - 78) / 42) % 2 === 0) {
-        x.beginPath(); x.moveTo(Math.cos(a) * (r + 4), Math.sin(a) * (r + 4)); x.lineTo(Math.cos(a) * (r + 20), Math.sin(a) * (r + 20)); x.stroke();
-      } else {
-        x.beginPath(); x.arc(Math.cos(a) * (r + 12), Math.sin(a) * (r + 12), 3, 0, 7); x.stroke();
-      }
-    }
-  }
-  // the fourteen-point sun
-  x.fillStyle = "#ffe29a";
-  x.beginPath();
-  for (let i = 0; i < 28; i++) {
-    const a = (i / 28) * Math.PI * 2, r = i % 2 ? 26 : 72;
-    x.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-  }
-  x.closePath(); x.fill();
-  x.lineWidth = 3; x.stroke();
-  x.fillStyle = "#6e3f1f";
-  x.beginPath(); x.arc(0, 0, 12, 0, 7); x.fill();
+  x.fillStyle = "#f7f7f2"; x.fillRect(0, 0, 128, 64);
+  x.strokeStyle = "#24163f"; x.lineWidth = 6; x.strokeRect(3, 3, 122, 58);
+  x.fillStyle = "#24163f"; x.font = "900 30px Nunito, sans-serif"; x.textAlign = "center"; x.textBaseline = "middle";
+  x.fillText(text, 64, 34);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
 
-export function drumPlaza() {
-  const g = site(PLAZA, new THREE.Vector3(0, 0, 1));
-  const profile = [[0, 0], [0.66, 0], [0.7, 0.06], [0.6, 0.22], [0.56, 0.36], [0.7, 0.5], [0.74, 0.55], [0, 0.55]].map(
-    ([a, b]) => new THREE.Vector2(a, b));
-  const body = inked(new THREE.LatheGeometry(profile, 40), toon(0x9c6a3a), 0.02);
-  const faceMat = new THREE.MeshToonMaterial({ map: drumTexture(), emissive: 0xffb347, emissiveIntensity: 0 });
-  const face = new THREE.Mesh(new THREE.CircleGeometry(0.74, 48), faceMat);
-  face.rotation.x = -Math.PI / 2;
-  face.position.y = 0.552;
-  face.receiveShadow = true;
-  const drum = new THREE.Group();
-  drum.add(body, face);
-  g.add(drum);
-  // a ring of little flags from everywhere the crew has been
-  const flags = [["#da251d"], ...WORLD.map((w) => w.flag)];
-  for (let i = 0; i < 12; i++) {
-    const f = makeFlag(flags[i % flags.length], 0.9);
-    f.scale.setScalar(0.28);
-    const a = (i / 12) * Math.PI * 2;
-    f.position.set(Math.cos(a) * 1.45, 0, Math.sin(a) * 1.45);
-    f.rotation.y = -a;
-    g.add(f);
-  }
-  return { group: g, faceMat, drum };
-}
-
-/* --------------------------------------------------------------- vehicles */
-
-/** Xe máy: the Little Giant's scooter. Slots are where passengers stack. */
+/**
+ * Xe máy: a Cub-meets-Vespa scooter, about 0.62 long in its own units (the story
+ * scales it up). Faces +Z. `slots` are where the crew sit and stack; `wheels`
+ * spin about their local X.
+ */
 export function motorbike() {
   const g = new THREE.Group();
-  const red = 0xe63946;
-  const body = box(0.13, 0.08, 0.44, red, 0.012);
-  body.position.y = 0.07;
-  const seat = box(0.12, 0.03, 0.26, 0x2a1f3d, 0.008);
-  seat.position.set(0, 0.15, -0.06);
-  const front = box(0.13, 0.2, 0.06, red, 0.012);
-  front.position.set(0, 0.07, 0.2);
-  front.rotation.x = -0.25;
-  const bar = cyl(0.01, 0.01, 0.22, 6, 0x2a1f3d, 0.005);
-  bar.rotation.z = Math.PI / 2;
-  bar.position.set(0.11, 0.3, 0.22);
-  const lamp = inked(new THREE.SphereGeometry(0.03, 10, 8), glow(0xfff3b0), 0.006);
-  lamp.position.set(0, 0.26, 0.26);
-  const wheelGeo = new THREE.TorusGeometry(0.06, 0.025, 8, 16);
-  const wheels = [0.2, -0.18].map((z) => {
-    const w = inked(wheelGeo, 0x1b1530, 0.006);
-    w.rotation.y = Math.PI / 2;
-    w.position.set(0, 0.06, z);
+  const red = 0xe63946, cream = 0xf6ecd6, chrome = 0xdfe4ef, dark = 0x2a1f3d, seatBrown = 0x4a2f28;
+  // wheels: tyre, rim, hub
+  const tyreGeo = new THREE.TorusGeometry(0.068, 0.024, 10, 24);
+  const rimGeo = new THREE.CylinderGeometry(0.048, 0.048, 0.03, 20);
+  const hubGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.05, 10);
+  const wheels = [0.23, -0.2].map((z) => {
+    const w = new THREE.Group();
+    const tyre = inked(tyreGeo, toon(0x1b1530), 0.006);
+    tyre.rotation.y = Math.PI / 2;
+    const rim = inked(rimGeo, toon(chrome), 0.004);
+    rim.rotation.z = Math.PI / 2;
+    const hub = inked(hubGeo, toon(red), 0.003);
+    hub.rotation.z = Math.PI / 2;
+    w.add(tyre, rim, hub);
+    // a painted stripe on the rim so the spin reads
+    const mark = box(0.034, 0.012, 0.014, red, 0);
+    mark.position.set(0, 0.025, 0);
+    w.add(mark);
+    w.position.set(0, 0.092, z);
     g.add(w);
     return w;
   });
-  g.add(body, seat, front, bar, lamp);
-  // 9 on one bike: 3 in a line, 3 on their heads, then 2, then 1 on top
+  // front fender hugging the wheel
+  const fender = inked(new THREE.TorusGeometry(0.085, 0.022, 8, 16, Math.PI * 0.8), toon(red), 0.006);
+  fender.rotation.set(0, Math.PI / 2, 0);
+  fender.rotateZ(Math.PI * 0.12);
+  fender.position.set(0, 0.092, 0.23);
+  fender.scale.set(1, 1, 1.3);
+  // fork: two stanchions to the steering head
+  [-0.035, 0.035].forEach((x) => {
+    const f = cyl(0.008, 0.008, 0.22, 6, chrome, 0.003);
+    f.position.set(x, 0.09, 0.235);
+    f.rotation.x = -0.28;
+    g.add(f);
+  });
+  // leg shield: a curved cream panel, the Vespa silhouette
+  const shield = inked(new THREE.CylinderGeometry(0.1, 0.085, 0.26, 18, 1, true, -Math.PI * 0.42, Math.PI * 0.84),
+    toon(cream, { side: THREE.DoubleSide }), 0.006);
+  shield.position.set(0, 0.2, 0.1);
+  shield.rotation.x = -0.18;
+  shield.scale.set(1.1, 1, 0.9);
+  // steering column and headset with the round chrome headlight
+  const column = cyl(0.03, 0.026, 0.2, 10, red, 0.006);
+  column.position.set(0, 0.18, 0.2);
+  column.rotation.x = -0.28;
+  const headset = inked(new THREE.CapsuleGeometry(0.035, 0.12, 4, 10), toon(red), 0.006);
+  headset.rotation.z = Math.PI / 2;
+  headset.position.set(0, 0.39, 0.25);
+  const bezel = inked(new THREE.TorusGeometry(0.032, 0.008, 8, 18), toon(chrome), 0.003);
+  bezel.position.set(0, 0.39, 0.29);
+  const lens = new THREE.Mesh(new THREE.CircleGeometry(0.03, 18), glow(0xfff3b0));
+  lens.position.set(0, 0.39, 0.292);
+  // handlebar, grips, mirrors
+  const bar = cyl(0.008, 0.008, 0.3, 6, chrome, 0.003);
+  bar.rotation.z = Math.PI / 2;
+  bar.position.set(0.15, 0.4, 0.24);
+  [-1, 1].forEach((s) => {
+    const grip = cyl(0.013, 0.013, 0.05, 8, dark, 0.003);
+    grip.rotation.z = Math.PI / 2;
+    grip.position.set(s * 0.17 + (s > 0 ? 0 : 0.05), 0.4, 0.24);
+    const stalk = cyl(0.004, 0.004, 0.09, 4, chrome, 0.002);
+    stalk.position.set(s * 0.1, 0.4, 0.24);
+    stalk.rotation.z = -s * 0.35;
+    const mirror = inked(new THREE.CylinderGeometry(0.022, 0.022, 0.008, 14), toon(chrome), 0.003);
+    mirror.rotation.x = Math.PI / 2;
+    mirror.position.set(s * 0.13, 0.485, 0.24);
+    g.add(grip, stalk, mirror);
+  });
+  // floorboard with rubber strips
+  const floor = box(0.12, 0.02, 0.2, dark, 0.005);
+  floor.position.set(0, 0.07, 0.02);
+  for (let i = 0; i < 4; i++) {
+    const strip = box(0.1, 0.004, 0.012, 0x5a5270, 0);
+    strip.position.set(0, 0.09, -0.06 + i * 0.05);
+    g.add(strip);
+  }
+  // rear body: a rounded cowl over the engine and the back wheel
+  const cowl = inked(new THREE.SphereGeometry(0.1, 20, 14), toon(red), 0.008);
+  cowl.scale.set(0.8, 0.75, 1.55);
+  cowl.position.set(0, 0.16, -0.13);
+  const trim = inked(new THREE.TorusGeometry(0.1, 0.006, 6, 24), toon(chrome), 0.002);
+  trim.rotation.y = Math.PI / 2;
+  trim.scale.set(1, 0.75, 1.55);
+  trim.position.set(0.075, 0.16, -0.13);
+  // seat: a long padded saddle
+  const seat = inked(new THREE.CapsuleGeometry(0.045, 0.2, 4, 12), toon(seatBrown), 0.006);
+  seat.rotation.x = Math.PI / 2;
+  seat.scale.set(1.2, 1, 0.55);
+  seat.position.set(0, 0.245, -0.09);
+  // exhaust, tail light and plate
+  const pipe = cyl(0.016, 0.016, 0.24, 10, chrome, 0.004);
+  pipe.rotation.x = Math.PI / 2 - 0.12;
+  pipe.position.set(0.075, 0.075, -0.04);
+  const tip = cyl(0.02, 0.02, 0.03, 10, 0x8a8fa0, 0.003);
+  tip.rotation.x = Math.PI / 2;
+  tip.position.set(0.075, 0.06, -0.3);
+  const tail = inked(new THREE.BoxGeometry(0.06, 0.025, 0.02), glow(0xff3b3b), 0.004);
+  tail.position.set(0, 0.2, -0.29);
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.04), new THREE.MeshBasicMaterial({ map: plateTexture("59-VG 26") }));
+  plate.position.set(0, 0.14, -0.3);
+  plate.rotation.y = Math.PI;
+  // kick stand and a little basket up front
+  const stand = cyl(0.005, 0.005, 0.09, 4, dark, 0.002);
+  stand.position.set(-0.05, 0.02, -0.02);
+  stand.rotation.z = 0.6;
+  const basket = box(0.1, 0.05, 0.06, 0xc8964f, 0.004);
+  basket.position.set(0, 0.28, 0.31);
+  g.add(fender, shield, column, headset, bezel, lens, bar, floor, cowl, trim, seat, pipe, tip, tail, plate, stand, basket);
+  // Nine on one bike: three on the saddle, three on their heads, then two, then one
   const H = 0.3 / 1.35; // one mascot tall, in the bike's own (scaled) units
+  const base = 0.27;
   const slots = [
-    [0, 0.16, 0.08], [0, 0.16, -0.05], [0, 0.16, -0.18],
-    [0, 0.16 + H, 0.08], [0, 0.16 + H, -0.05], [0, 0.16 + H, -0.18],
-    [0, 0.16 + H * 2, 0.02], [0, 0.16 + H * 2, -0.12],
-    [0, 0.16 + H * 3, -0.05],
+    [0, base, 0.06], [0, base, -0.07], [0, base, -0.2],
+    [0, base + H, 0.06], [0, base + H, -0.07], [0, base + H, -0.2],
+    [0, base + H * 2, 0.0], [0, base + H * 2, -0.13],
+    [0, base + H * 3, -0.07],
   ].map(([x, y, z]) => new THREE.Vector3(x, y, z));
-  return { group: g, slots, wheels };
+  return { group: g, slots, wheels, exhaust: new THREE.Vector3(0.075, 0.06, -0.33) };
 }
 
 function bannerTexture(text: string) {

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { simplex3, smoothstep, lerp, rng } from "./noise";
-import { toon } from "./toon";
+import { outline, toon } from "./toon";
 
 /** Planet radius. Everything else on the globe is measured against it. */
 export const R = 10;
@@ -99,7 +99,7 @@ export const WORLD: WorldStop[] = [
   { id: "paris", name: "Paris", vi: "Paris", dir: latLon(42, -150), color: 0x9fb6ff, flag: ["#0055a4", "#ffffff", "#ef4135"] },
   { id: "newyork", name: "New York", vi: "New York", dir: latLon(12, -86), color: 0x7fd6b0, flag: ["#3c3b6e", "#ffffff", "#b22234"] },
 ];
-export const PLAZA = latLon(62, -24);
+export const PLAZA = latLon(64, 34);
 
 type Blob = { c: THREE.Vector3; r: number; h: number; mtn: number };
 type Site = { c: THREE.Vector3; r: number; h: number };
@@ -161,7 +161,7 @@ function fbm(d: THREE.Vector3, freq: number, octaves: number) {
 /** How far a point is from any road, 0 on the asphalt, 1 in the clear. */
 function roadClear(d: THREE.Vector3) {
   return Math.min(
-    smoothstep(0.03, 0.12, Math.abs(d.dot(roadA.normal))),
+    smoothstep(0.05, 0.24, Math.abs(d.dot(roadA.normal))),
     smoothstep(0.03, 0.12, Math.abs(d.dot(roadB.normal))),
   );
 }
@@ -207,6 +207,7 @@ const C = (hex: number) => new THREE.Color(hex);
 const PALETTE = {
   deep: C(0x1d3fa8), mid: C(0x2c7fe0), shallow: C(0x58d0e6), foam: C(0xd6fbff),
   sand: C(0xf6d68d), grassA: C(0x8ad64a), grassB: C(0x3fae4c), forest: C(0x2e8b47),
+  dune: C(0xf0cf86), buckwheat: C(0xf5a3c7), jade: C(0x6fe0c8), emerald: C(0x1fa99a),
   rock: C(0xa592aa), rockDark: C(0x75648a), snow: C(0xfbf8ff), terrace: C(0xc8e05a),
 };
 
@@ -230,13 +231,18 @@ export function buildPlanet() {
     pos.setXYZ(i, d.x * r, d.y * r, d.z * r);
     // land
     const vary = fbm(d, 9, 2) * 0.5 + 0.5;
+    const desert = smoothstep(0.34, 0.18, d.angleTo(WORLD[2].dir));
+    const buckwheat = smoothstep(0.5, 0.3, d.angleTo(roadA.dir(-0.15)));
     if (s.h < SEA + 0.07) c.copy(PALETTE.sand);
+    else if (desert > 0 && s.mountain < 0.2) c.copy(PALETTE.grassA).lerp(PALETTE.dune, desert);
     else {
       c.copy(PALETTE.grassA).lerp(PALETTE.grassB, THREE.MathUtils.clamp(vary * 1.2 - 0.1, 0, 1));
       if (s.h > 0.5) c.lerp(PALETTE.forest, 0.35);
       const rock = smoothstep(0.08, 0.3, s.mountain);
       c.lerp(vary > 0.5 ? PALETTE.rock : PALETTE.rockDark, rock);
       if (s.h > 1.3) c.lerp(PALETTE.snow, smoothstep(1.3, 1.55, s.h));
+      // Hà Giang's buckwheat fields: pink patches between the terraces
+      if (buckwheat > 0 && s.mountain < 0.1 && fbm(d, 11, 2) > 0.26) c.lerp(PALETTE.buckwheat, buckwheat * 0.7);
     }
     colors.set([c.r, c.g, c.b], i * 3);
     // water colour comes from the depth underneath it
@@ -244,6 +250,9 @@ export function buildPlanet() {
     if (depth < 0.03) c.copy(PALETTE.foam);
     else if (depth < 0.2) c.copy(PALETTE.shallow).lerp(PALETTE.mid, smoothstep(0.03, 0.2, depth));
     else c.copy(PALETTE.mid).lerp(PALETTE.deep, smoothstep(0.2, 0.9, depth));
+    // Hạ Long's water is emerald, not ocean blue
+    const bay = smoothstep(0.42, 0.2, d.angleTo(roadA.dir(STOPS.haLong)));
+    if (bay > 0 && depth >= 0.03) c.lerp(depth < 0.2 ? PALETTE.jade : PALETTE.emerald, bay * 0.85);
     waterColors.set([c.r, c.g, c.b], i * 3);
   }
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -404,6 +413,8 @@ export function scatterTrees(count = 1400) {
     d.normalize();
     const s = sample(d);
     if (s.h < SEA + 0.08 || s.h > 1.25 || s.site > 0.2) continue;
+    // keep the landmark sets and the drum plaza clear for the camera
+    if (WORLD.some((w) => angle(d, w.dir) < 0.34) || angle(d, PLAZA) < 0.3) continue;
     if (Math.abs(d.dot(roadA.normal)) < 0.06 || Math.abs(d.dot(roadB.normal)) < 0.025) continue;
     if (s.mountain > 0.25 && random() < 0.7) continue;
     const size = 0.07 + random() * 0.07;
@@ -419,19 +430,37 @@ export function scatterTrees(count = 1400) {
       roundColors.push(new THREE.Color(greens[Math.floor(random() * greens.length)]));
     }
   }
-  const make = (geo: THREE.BufferGeometry, mats: THREE.Matrix4[], color: number, colors?: THREE.Color[]) => {
+  const sets: { mesh: THREE.InstancedMesh; mats: THREE.Matrix4[]; at: THREE.Vector3[]; hidden: Uint8Array }[] = [];
+  const make = (geo: THREE.BufferGeometry, mats: THREE.Matrix4[], color: number, colors?: THREE.Color[], ink = 0) => {
     const mesh = new THREE.InstancedMesh(geo, toon(color), mats.length);
     mats.forEach((m, i) => mesh.setMatrixAt(i, m));
     colors?.forEach((c, i) => mesh.setColorAt(i, c));
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    if (ink) outline(mesh, ink);
+    sets.push({ mesh, mats, at: mats.map((m) => new THREE.Vector3().setFromMatrixPosition(m)), hidden: new Uint8Array(mats.length) });
     return mesh;
   };
   group.add(
     make(trunkGeo, trunks, 0x7a4b3a),
-    make(crownGeo, round, 0xffffff, roundColors),
-    make(pineGeo, pine, 0x2d8a4e),
-    make(crownGeo, blossom, 0xff9ec7),
+    make(crownGeo, round, 0xffffff, roundColors, 0.09),
+    make(pineGeo, pine, 0x2d8a4e, undefined, 0.09),
+    make(crownGeo, blossom, 0xff9ec7, undefined, 0.09),
   );
-  return group;
+  const zero = new THREE.Matrix4().makeScale(0, 0, 0);
+  /** Trees the camera is about to fly into shrink away instead of filling the frame. */
+  const update = (camera: THREE.Vector3) => {
+    for (const set of sets) {
+      let dirty = false;
+      for (let i = 0; i < set.at.length; i++) {
+        const near = set.at[i].distanceToSquared(camera) < 0.36 ? 1 : 0;
+        if (near === set.hidden[i]) continue;
+        set.hidden[i] = near;
+        set.mesh.setMatrixAt(i, near ? zero : set.mats[i]);
+        dirty = true;
+      }
+      if (dirty) set.mesh.instanceMatrix.needsUpdate = true;
+    }
+  };
+  return { group, update };
 }
