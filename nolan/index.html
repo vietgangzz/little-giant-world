@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>The Nolan Cut — VGang Studios</title>
+    <meta name="description" content="Nine VGang friends restage nine Christopher Nolan scenes in one minute: a toon tribute from VGang Studios." />
+    <meta name="theme-color" content="#0d0a12" />
+    <link rel="icon" href="/vgang-mascot.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;700&family=Permanent+Marker&family=Nunito:ital,wght@0,700;0,800;0,900;1,700&display=swap" rel="stylesheet" />
+  </head>
+  <body data-state="intro">
+    <canvas id="film"></canvas>
+    <div id="pops"></div>
+
+    <!-- letterbox: the bars open up for the IMAX moments -->
+    <div class="bar top"></div>
+    <div class="bar bottom"></div>
+
+    <!-- black title cards over the cold open -->
+    <div id="card" class="card"><p class="small">VGANG STUDIOS</p><p class="big">presents</p></div>
+
+    <div id="title" class="title">
+      <p class="kicker"></p>
+      <h2 class="film"></h2>
+      <p class="star"></p>
+    </div>
+    <div id="slate" class="slate"><b>SC. 01</b><i>TAKE 1</i></div>
+    <div id="sub" class="sub"><b class="en"></b><i class="vi"></i></div>
+
+    <header class="brand">
+      <a href="/" class="back">← Little Giant world</a>
+      <p class="logo">THE NOLAN CUT</p>
+    </header>
+    <nav class="controls">
+      <button id="replay">▶ Play</button>
+      <button id="mute" aria-label="Mute">♪</button>
+    </nav>
+    <div class="progress"><i id="progress"></i></div>
+
+    <section class="start">
+      <div class="poster">
+        <p class="kicker">VGANG STUDIOS presents</p>
+        <h1>T H E&nbsp;&nbsp;N O L A N&nbsp;&nbsp;C U T</h1>
+        <div id="poster-cast" class="poster-cast"></div>
+        <p class="tag">Nine friends. Nine Christopher Nolan films. Sixty seconds.<br /><span>Chín người bạn. Chín phim Nolan. Sáu mươi giây.</span></p>
+        <button id="play">▶ Roll camera <small>sound on · 60s</small></button>
+      </div>
+    </section>
+
+    <section class="signoff" aria-live="polite">
+      <div class="signoff-card">
+        <p class="made">made with <span class="heart">♥</span> by</p>
+        <h2 class="team">
+          <span style="--i:0">V</span><span style="--i:1">G</span><span class="gap" style="--i:2">&nbsp;</span><span style="--i:3">T</span><span style="--i:4">E</span><span style="--i:5">A</span><span style="--i:6">M</span>
+        </h2>
+        <div class="credits-grid" id="credits"></div>
+        <p class="top-q">…did the top fall? <span>con quay có đổ không?</span></p>
+        <p class="credits">Music “Heroic Age” Kevin MacLeod (incompetech.com) CC BY 4.0 · SFX Kenney.nl CC0 · A fan tribute to the films of Christopher Nolan</p>
+      </div>
+    </section>
+
+    <script type="module" src="/src/nolan/main.ts"></script>
+  </body>
+</html>

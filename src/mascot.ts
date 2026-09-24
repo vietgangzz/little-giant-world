@@ -5,12 +5,18 @@ import { mascotArtwork } from "./mascotArtwork";
 import { inked, toon } from "./toon";
 
 /** Little Giant in mascot units: 2 tall, feet at y=0, facing +Z, ±1.12 wide, ±0.7 deep. */
-type Art = { body: THREE.BufferGeometry; eyes: THREE.BufferGeometry[]; surface: (x: number, y: number) => number };
+type Art = {
+  body: THREE.BufferGeometry;
+  eyes: THREE.BufferGeometry[];
+  surface: (x: number, y: number) => number;
+  /** Maps a point in the brand SVG's coordinates onto the mascot's local x/y. */
+  place: (x: number, y: number) => THREE.Vector2;
+};
 let shared: Art | null = null;
 /** Half-depth at the fattest point: the body is an oval pebble, not a slab. */
 const BODY_DEPTH = 0.7;
 
-function artwork(): Art {
+export function artwork(): Art {
   if (shared) return shared;
   const svg = new SVGLoader().parse(
     `<svg xmlns="http://www.w3.org/2000/svg"><path d="${mascotArtwork.body}"/>${mascotArtwork.eyes
@@ -40,12 +46,12 @@ function artwork(): Art {
   // eyes are glossy decals lifted off the curved face, each with its own small bulge
   const eyes = svg.paths.slice(1).map((p) =>
     inflate(outline(p).map(place), 26, (x, y, d) => surface(x, y) + 0.018 + 0.05 * dome(d, 0.07), false));
-  shared = { body: bodyGeo, eyes, surface };
+  shared = { body: bodyGeo, eyes, surface, place: (x, y) => place(new THREE.Vector2(x, y)) };
   return shared;
 }
 
 /** Orients a flat decal so it lies on the body surface at (x, y). */
-function onSurface(object: THREE.Object3D, surface: Art["surface"], x: number, y: number, lift: number) {
+export function onSurface(object: THREE.Object3D, surface: Art["surface"], x: number, y: number, lift: number) {
   const e = 0.02;
   const n = new THREE.Vector3(
     -(surface(x + e, y) - surface(x - e, y)) / (2 * e),
@@ -64,6 +70,9 @@ const NON_LA: [number, number][] = [
 ];
 let hatGeometry: THREE.LatheGeometry | null = null;
 
+/** The ink every brand mascot's eyes are drawn in. */
+export const FOREST = 0x234d37;
+
 export type MascotOptions = { hat?: boolean; flag?: string[]; eyes?: number; scale?: number };
 
 export class Mascot {
@@ -71,49 +80,42 @@ export class Mascot {
   /** Everything that squashes and hops. */
   readonly rig = new THREE.Group();
   readonly hat?: THREE.Object3D;
-  private leftHand = new THREE.Group();
-  private rightHand = new THREE.Group();
+  /** Hand nubs, as in the brand drawings: small balls of body colour that hold the props. */
+  readonly leftHand = new THREE.Group();
+  readonly rightHand = new THREE.Group();
+  /** Where each hand sits when it is not waving or cheering; costumes move them onto their props. */
+  readonly rest = { left: new THREE.Vector3(-1.14, 0.8, 0.2), right: new THREE.Vector3(1.1, 0.8, 0.2) };
   private hopStart = -10;
   private hopHeight = 0;
   private hopLength = 0.5;
   private spinStart = -10;
   waving = 0;
   cheering = 0;
+  /** Per-frame hooks for costume parts that move on their own (tails, smoke, babies). */
+  readonly ticks: ((now: number) => void)[] = [];
+  /** Named costume parts, so a scene can reach in and animate a prop. */
+  readonly parts: Record<string, THREE.Object3D> = {};
   bounce = 0.6;
   phase = Math.random() * 10;
 
   constructor(readonly color: number, options: MascotOptions = {}) {
     const art = artwork();
     const body = inked(art.body, toon(color), 0.045);
-    const eyeMaterial = toon(options.eyes ?? 0x1c2e24);
+    // the brand face: two flat forest-green eyes, nothing else
+    const eyeMaterial = toon(options.eyes ?? FOREST);
     art.eyes.forEach((g) => this.rig.add(new THREE.Mesh(g, eyeMaterial)));
-    // Eye sparkle, the one detail that makes it read as cute at a distance.
-    const sparkle = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    [[-0.24, 1.1, 0.075], [0.54, 1.06, 0.075], [-0.1, 0.9, 0.08]].forEach(([x, y, lift], i) => {
-      const s = sparkle.clone();
-      if (i === 2) s.scale.setScalar(0.5);
-      onSurface(s, art.surface, x, y, lift);
-      this.rig.add(s);
-    });
-    const cheek = new THREE.Mesh(new THREE.CircleGeometry(0.12, 20), new THREE.MeshBasicMaterial({ color: 0xff8fa3, transparent: true, opacity: 0.6, depthWrite: false }));
-    [[-0.55, 0.72], [0.84, 0.72]].forEach(([x, y]) => {
-      const c = cheek.clone();
-      onSurface(c, art.surface, x, y, 0.012);
-      c.scale.set(1.2, 0.8, 1);
-      this.rig.add(c);
-    });
     this.rig.add(body);
 
-    const handGeo = new THREE.SphereGeometry(0.17, 16, 12);
+    const handGeo = new THREE.SphereGeometry(0.12, 16, 12);
     const handMat = toon(color);
     [this.leftHand, this.rightHand].forEach((hand, i) => {
-      const ball = inked(handGeo, handMat, 0.045);
+      const ball = inked(handGeo, handMat, 0.035);
       hand.add(ball);
-      hand.position.set(i ? 1.16 : -1.2, 0.86, 0.12);
+      hand.position.copy(i ? this.rest.right : this.rest.left);
       this.rig.add(hand);
     });
 
-    if (options.hat !== false) {
+    if (options.hat) {
       hatGeometry ??= new THREE.LatheGeometry(NON_LA.map(([x, y]) => new THREE.Vector2(x, y)), 36);
       const hat = inked(hatGeometry, toon(0xf1d58a), 0.035);
       hat.position.set(0.03, 1.86, 0);
@@ -129,6 +131,14 @@ export class Mascot {
     }
     this.root.add(this.rig);
     this.root.scale.setScalar(options.scale ?? 0.15);
+  }
+
+  /**
+   * Props that stand on the floor beside the body (a suitcase, a dog, the
+   * babies) make no sense on a seat, so they are put away while riding.
+   */
+  stow(stowed: boolean) {
+    for (const key of ["poodle", "suitcase", "babyA", "babyB"]) if (this.parts[key]) this.parts[key].visible = !stowed;
   }
 
   hop(now: number, height = 0.9, length = 0.5) {
@@ -165,10 +175,11 @@ export class Mascot {
     this.rig.rotation.y = spinT >= 0 && spinT < 1 ? spinT * Math.PI * 2 : 0;
 
     const w = this.waving;
-    this.leftHand.position.set(-1.2 - w * 0.1, 0.86 + w * (0.5 + Math.cos(t * 9) * 0.1), 0.1);
+    this.leftHand.position.copy(this.rest.left).add(new THREE.Vector3(-w * 0.1, w * (0.5 + Math.cos(t * 9) * 0.1), 0));
     this.leftHand.rotation.z = w * Math.sin(t * 9) * 0.3;
     const up = Math.max(cheer, 0);
-    this.rightHand.position.set(1.16 + up * 0.1, 0.86 + up * (0.55 + Math.sin(t * 9 + 1) * 0.1), 0.1);
+    this.rightHand.position.copy(this.rest.right).add(new THREE.Vector3(up * 0.1, up * (0.55 + Math.sin(t * 9 + 1) * 0.1), 0));
+    this.ticks.forEach((tick) => tick(now));
     if (this.hat) this.hat.rotation.z = -0.08 + Math.sin(t * 4) * 0.03 + (hopT > 0 && hopT < 1 ? Math.sin(hopT * 12) * 0.08 : 0);
   }
 }

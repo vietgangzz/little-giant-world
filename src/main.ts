@@ -4,6 +4,8 @@ import { Sound } from "./audio";
 import { clamp, lerp, smoothstep } from "./noise";
 import { car, clouds, smallPlane, starfield, Trails } from "./props";
 import { airport, haGiang, haLong, hoiAn, saiGon, worldLandmarks } from "./scenery";
+import { hex } from "./crew";
+import { renderPortraits } from "./portraits";
 import { CAPTIONS, CHAPTERS, CREW, LITTLE_GIANT, Story, T, type Cue, type Shot } from "./story";
 import { buildPlanet, buildRoad, heightAt, R, Ring, roadA, roadB, scatterTrees } from "./world";
 
@@ -173,26 +175,30 @@ let debugShot: Shot | null = null;
 const clean = params.has("clean");
 document.body.classList.toggle("clean", clean);
 
+// every mascot rendered once, in costume, for the DOM UI
+const CAST = [LITTLE_GIANT, ...CREW];
+const mascotShots = renderPortraits(CAST, 192, { heroHat: true });
+const mascotOf = (m: (typeof CAST)[number]) => mascotShots.get(m.handle) ?? "/vgang-mascot.svg";
 // the sign-off parades the whole crew under the VG TEAM title
-[LITTLE_GIANT, ...CREW].forEach((m, i) => {
-  const face = document.createElement("i");
-  face.style.setProperty("--c", `#${m.color.toString(16).padStart(6, "0")}`);
+CAST.forEach((m, i) => {
+  const face = document.createElement("figure");
+  face.style.setProperty("--c", hex(m.color));
   face.style.setProperty("--i", String(i));
-  face.innerHTML = `<img src="${m.portrait}" alt="${m.name}" />`;
+  face.innerHTML = `<img src="${mascotOf(m)}" alt="${m.name}" /><figcaption>${m.name}</figcaption>`;
   $("#signoff-crew").append(face);
 });
 const crewRow = $("#crew-row");
-[LITTLE_GIANT, ...CREW].forEach((m, i) => {
+CAST.forEach((m, i) => {
   const face = document.createElement("i");
-  face.style.setProperty("--c", `#${m.color.toString(16).padStart(6, "0")}`);
-  face.innerHTML = `<img src="${m.portrait}" alt="" />`;
+  face.style.setProperty("--c", hex(m.color));
+  face.innerHTML = `<img src="${mascotOf(m)}" alt="" />`;
   face.title = m.name;
   face.dataset.i = String(i);
   crewRow.append(face);
 });
 function setCount(crew: number, friends: number) {
   crewRow.querySelectorAll("i").forEach((el, i) => el.classList.toggle("on", i < crew));
-  $("#crew-count").textContent = `${crew}/9`;
+  $("#crew-count").textContent = `${crew}/${CAST.length}`;
   $("#friend-count").textContent = String(friends);
 }
 
@@ -204,11 +210,12 @@ function spawnPop(at: THREE.Vector3, text = "POP!") {
   $("#pops").append(el);
   pops.push({ el, at: at.clone(), born: performance.now() });
 }
-function toast(text: string, color: number, portrait?: string) {
+function toast(text: string, color: number, portrait?: string, mascot?: string) {
   const el = document.createElement("div");
   el.className = "toast";
   el.style.setProperty("--c", `#${color.toString(16).padStart(6, "0")}`);
-  el.innerHTML = `${portrait ? `<img src="${portrait}" alt="" />` : "<b>★</b>"}<span>${text}</span>`;
+  // the member's photo, with their mascot peeking over its shoulder
+  el.innerHTML = `${portrait ? `<img src="${portrait}" alt="" />` : "<b>★</b>"}${mascot ? `<img class="buddy" src="${mascot}" alt="" />` : ""}<span>${text}</span>`;
   $("#toasts").append(el);
   setTimeout(() => el.classList.add("out"), 2300);
   setTimeout(() => el.remove(), 2800);
@@ -224,7 +231,7 @@ function handle(cue: Cue) {
   switch (cue.kind) {
     case "sfx": sound.play(cue.name, cue.volume ?? 0.8); break;
     case "pop": spawnPop(cue.at, cue.text); break;
-    case "toast": toast(cue.text, cue.color, cue.member?.portrait); break;
+    case "toast": toast(cue.text, cue.color, cue.member ? cue.member.photo ?? mascotOf(cue.member) : undefined, cue.member?.photo ? mascotOf(cue.member) : undefined); break;
     case "stamp": stamp(cue.text); break;
     case "count": setCount(cue.crew, cue.friends); break;
     case "signoff": document.body.classList.add("signing"); break;
@@ -283,7 +290,7 @@ function setMode(next: Mode) {
   document.body.dataset.mode = mode;
   document.querySelectorAll<HTMLButtonElement>(".modes button[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === mode));
   updateCaption(0);
-  setCount(9, 5);
+  setCount(CAST.length, 5);
 }
 
 function startStory(at: number) {

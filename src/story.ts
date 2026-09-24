@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { dressed, poodle } from "./accessories";
+import { CREW, LITTLE_GIANT, type CrewMember } from "./crew";
 import { Mascot } from "./mascot";
 import { clamp, easeInOut, easeOutBack, lerp, smoothstep } from "./noise";
 import { motorbike, tourPlane, roadFrame, Fireworks } from "./props";
@@ -7,19 +9,9 @@ import { PLAZA, R, WORLD, roadA, STOPS, groundPoint } from "./world";
 
 /* ================================================================ the cast */
 
-export type CrewMember = { handle: string; name: string; color: number; eyes?: number; portrait: string };
-export const LITTLE_GIANT: CrewMember = { handle: "vietgang", name: "Little Giant", color: 0xc6df70, portrait: "/vgang-mascot.svg" };
-/** Picked up two at a time, in the order the bike reaches them. */
-export const CREW: CrewMember[] = [
-  { handle: "giaBaoJS", name: "Paul", color: 0xe6c667, portrait: "/team/paul.webp" },
-  { handle: "huytdps13400", name: "David", color: 0xbadb96, portrait: "/team/david.webp" },
-  { handle: "anhquan291", name: "Quan", color: 0x9ecddd, portrait: "/vgang-mascot.svg" },
-  { handle: "dennytosp", name: "Mad Dinh", color: 0xb1a0cc, portrait: "/team/mad-dinh.webp" },
-  { handle: "baronha", name: "Bao Ha", color: 0xf3b48e, portrait: "/team/baronha.webp" },
-  { handle: "khoatranthanh", name: "Khoa", color: 0xd7b0bd, portrait: "/team/khoa.webp" },
-  { handle: "tuanngocptn", name: "Nick", color: 0xd98573, portrait: "/team/nick.webp" },
-  { handle: "nnphong1904", name: "Phong", color: 0x315b40, eyes: 0xedf1d2, portrait: "/team/phong.webp" },
-];
+export { CREW, LITTLE_GIANT, type CrewMember } from "./crew";
+/** How many friends wait at each stop, in the order the bike reaches them. */
+const PER_STOP = [2, 2, 2, 3];
 
 /* ============================================================ the timeline */
 
@@ -35,10 +27,12 @@ const PICKUP_SIDE = 0.28;
   let t = RIDE_START, th: number = STOPS.home - 0.035;
   const move = (dur: number, to: number, stop = false) => { legs.push({ t0: t, t1: t + dur, th0: th, th1: to, stop }); t += dur; th = to; };
   const moves = [2.4, 3.2, 3.2, 3.2];
+  let crew = 0;
   STOP_PLACES.forEach((place, i) => {
     move(moves[i], place);
-    PICKUPS.push({ time: t + 0.35, crew: i * 2, theta: place + 0.012, side: PICKUP_SIDE, stop: i });
-    PICKUPS.push({ time: t + 1.1, crew: i * 2 + 1, theta: place - 0.012, side: PICKUP_SIDE, stop: i });
+    for (let k = 0; k < PER_STOP[i]; k++) {
+      PICKUPS.push({ time: t + 0.35 + k * 0.72, crew: crew++, theta: place + 0.012 - k * 0.024, side: PICKUP_SIDE, stop: i });
+    }
     move(2.4, place, true);
   });
   move(2.6, STOPS.airport);
@@ -78,6 +72,8 @@ function stopWeight(t: number) {
 }
 
 const PLANE_THETA = STOPS.airport + 0.07;
+/** Everyone who gathers round the drum at the end: the crew plus one friend per city. */
+const RING = CREW.length + WORLD.length;
 const PLANE_SCALE = 0.7;
 const BIKE_SCALE = 1.35;
 /** Mascots ride the plane a little smaller than life, or ten of them would not fit. */
@@ -160,8 +156,8 @@ export const CAPTIONS: Caption[] = [
   { t0: 19.1, t1: 21.5, en: "…scenic pickup, two more!", vi: "…đón khách view đẹp, thêm hai!" },
   { t0: 21.8, t1: 24.5, en: "Hội An lights up for the road trip.", vi: "Hội An lên đèn tiễn chuyến đi." },
   { t0: 24.7, t1: 27.1, en: "Lanterns, and two latecomers.", vi: "Đèn lồng, và hai đứa đi trễ." },
-  { t0: 27.4, t1: 30.1, en: "Sài Gòn, here we come!", vi: "Sài Gòn ơi, tụi mình tới đây!" },
-  { t0: 30.3, t1: 35.2, en: "Nine on one xe máy. Totally normal.", vi: "Chín đứa một xe. Chuyện thường ở huyện." },
+  { t0: 27.4, t1: 30.1, en: "Sài Gòn — three more squeeze on!", vi: "Sài Gòn — chen thêm ba đứa!" },
+  { t0: 30.3, t1: 35.2, en: "Ten on one xe máy. Totally normal.", vi: "Mười đứa một xe. Chuyện thường ở huyện." },
   { t0: 35.4, t1: 38.3, en: "Step 2: take the crew EVERYWHERE.", vi: "Bước 2: đưa cả hội đi khắp thế giới." },
   { t0: 38.8, t1: 41.6, en: "Singapore — hello, Merlion!", vi: "Singapore — chào Merlion!" },
   { t0: 42.0, t1: 44.8, en: "Tokyo — konnichiwa, Fuji-san!", vi: "Tokyo — konnichiwa, núi Phú Sĩ!" },
@@ -217,6 +213,8 @@ export class Story {
   /** A closed loop of the tour, for free-flight mode after the story. */
   readonly loopPath: SkyPath;
   readonly fireworks = new Fireworks();
+  /** Paul's poodle rides in the xe máy's front basket. */
+  readonly basketDog = poodle();
   /** Emitted by the bike's exhaust and the plane's wingtips; drained by main. */
   readonly puffs: THREE.Vector3[] = [];
   private events: Timed[] = [];
@@ -227,11 +225,14 @@ export class Story {
   private homeLocal = Local.road(STOPS.home);
 
   constructor() {
-    this.hero = new Mascot(LITTLE_GIANT.color);
-    this.crew = CREW.map((c) => new Mascot(c.color, { eyes: c.eyes }));
+    this.hero = dressed(LITTLE_GIANT, { hat: true, kit: false });
+    this.crew = CREW.map((c) => dressed(c));
     this.locals = WORLD.map((w) => new Mascot(w.color, { hat: false, flag: w.flag }));
     [this.hero, ...this.crew, ...this.locals].forEach((m) => this.group.add(m.root));
     this.group.add(this.bike.group, this.plane.group, this.plazaSet.group, this.fireworks.points);
+    this.basketDog.group.scale.setScalar(0.1);
+    this.basketDog.group.position.set(0, 0.3, 0.31);
+    this.bike.group.add(this.basketDog.group);
     this.homeSpot = groundPoint(roadA.point(STOPS.home, 0, PICKUP_SIDE));
     const loopKeys: [number, THREE.Vector3, number][] = [...WORLD.map((w) => w.dir), PLAZA, roadA.dir(STOPS.hoiAn)].map((d, i) => [i * 3, d, 1.7]);
     loopKeys.push([loopKeys.length * 3, loopKeys[0][1], 1.7]);
@@ -257,7 +258,7 @@ export class Story {
         this.cue({ kind: "sfx", name: `pickup-${i}` });
         this.cue({ kind: "sfx", name: "pop-2", volume: 0.5 });
         this.cue({ kind: "pop", at: roadA.point(p.theta, 0.55, p.side), text: ["HOP!", "YEET!", "WHEE!", "OI!"][i % 4] });
-        this.cue({ kind: "toast", member, text: `@${member.handle} hopped on!`, color: member.color });
+        this.cue({ kind: "toast", member, text: `${member.name} hopped on!`, color: member.color });
         this.cue({ kind: "count", crew: i + 2, friends: 0 });
       });
     });
@@ -275,7 +276,7 @@ export class Story {
         this.fireworks.burst(groundPoint(stop.dir, 2.4), colors, time, 130, 1.0);
         this.cue({ kind: "stamp", text: stop.name });
         this.cue({ kind: "toast", member: null, text: `+1 friend in ${stop.name}!`, color: stop.color });
-        this.cue({ kind: "count", crew: 9, friends: i + 1 });
+        this.cue({ kind: "count", crew: CREW.length + 1, friends: i + 1 });
       });
     });
     this.at(T.plaza, () => {
@@ -330,6 +331,9 @@ export class Story {
     const riders = [this.hero, ...this.crew];
     this.bike.group.visible = mode === "bike";
     this.plane.group.visible = mode === "plane";
+    this.basketDog.group.visible = mode === "bike";
+    this.basketDog.update(time, 0);
+    riders.forEach((m) => m.stow(mode !== "orbit"));
     let shot: Shot | null = null;
     if (mode === "bike") {
       const th = STOPS.home + time * 0.1;
@@ -469,17 +473,22 @@ export class Story {
     const riders = [this.hero, ...this.crew];
     const boarded = t >= T.board;
     const home = t >= T.plaza;
+    const paulAboard = t >= PICKUPS[0].time + 0.3 && t < T.board;
+    this.basketDog.group.visible = paulAboard;
+    this.basketDog.update(t, 0);
     riders.forEach((m, i) => {
       m.waving = 0;
       m.cheering = 0;
       m.root.visible = true;
+      const pick = i > 0 ? PICKUPS.find((p) => p.crew === i - 1)! : null;
+      m.stow(!home && (boarded || (pick ? t >= pick.time : t >= T.mainHop)));
       if (home) {
         if (i === 0) {
           // the hero stands on the drum, facing the way the camera first arrives
           const top = new THREE.Vector3(0, 0.66, 0).applyMatrix4(this.plazaSet.group.matrixWorld);
           this.stand(m, top, this.finaleCamDir(), 0.2);
         } else {
-          const { world, face } = this.plazaRing(i - 1, 13);
+          const { world, face } = this.plazaRing(i - 1, RING);
           this.stand(m, world, face);
         }
         m.cheering = 1;
@@ -512,18 +521,17 @@ export class Story {
         } else this.seat(m, this.bike.group, this.bike.slots[0], 0, 0.15 / BIKE_SCALE);
         return;
       }
-      const pick = PICKUPS.find((p) => p.crew === i - 1)!;
-      const { spot, face } = this.pickupSpot(pick);
-      if (t < pick.time) {
+      const { spot, face } = this.pickupSpot(pick!);
+      if (t < pick!.time) {
         this.stand(m, spot, face);
-        m.waving = t > pick.time - 2.6 ? 1 : 0;
+        m.waving = t > pick!.time - 2.6 ? 1 : 0;
         m.root.visible = t > T.bikePop - 1;
-      } else if (t < pick.time + 0.45) {
-        this.arc(m, spot, this.bike.slots[i].clone().applyMatrix4(this.bike.group.matrixWorld), (t - pick.time) / 0.45, 0.35 + tier * 0.12);
+      } else if (t < pick!.time + 0.45) {
+        this.arc(m, spot, this.bike.slots[i].clone().applyMatrix4(this.bike.group.matrixWorld), (t - pick!.time) / 0.45, 0.35 + tier * 0.12);
         m.root.quaternion.copy(this.bike.group.quaternion);
       } else {
         this.seat(m, this.bike.group, this.bike.slots[i], sway, 0.15 / BIKE_SCALE);
-        m.cheering = t < pick.time + 1.2 ? 0.4 : 0;
+        m.cheering = t < pick!.time + 1.2 ? 0.4 : 0;
       }
     });
 
@@ -531,7 +539,7 @@ export class Story {
       m.cheering = 0;
       m.waving = 0;
       if (home) {
-        const { world, face } = this.plazaRing(8 + i, 13);
+        const { world, face } = this.plazaRing(CREW.length + i, RING);
         this.stand(m, world, face);
         m.cheering = 1;
         m.root.scale.multiplyScalar(easeOutBack(clamp((t - T.plaza - 0.4 - i * 0.05) / 0.4)) + 1e-3);

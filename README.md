@@ -58,3 +58,31 @@ pnpm build    # typecheck + production build in dist/
   and *Interface Sounds*, CC0. All audio is sampled; none of it is synthesised.
 - Fonts: Bangers and Nunito (Google Fonts, OFL).
 - Made with ♥ by the VG team.
+
+## The Nolan Cut (`/nolan/`)
+
+A second route: VGang Studios restages nine Christopher Nolan scenes in one minute, one crew member per film.
+
+| Scene | Star | Gag / camera |
+| --- | --- | --- |
+| Memento | Phong | B&W polaroid that fades, snap to colour on the wall of notes: 1·2·3 ZÔ! |
+| The Prestige | Khoa | Tesla coil "Transported Man": two babies become eight; symmetrical push-in from the stalls |
+| The Dark Knight | Bao Ha | IMAX helicopter spiral down the tower; bat-signal throws the mascot on the clouds |
+| Inception | Paul + poodle | Paris folds over their heads; low tracking shot tilting up |
+| Interstellar | Quan | "Mountains" behind his selfie rise into a wave; the tick of the clock |
+| Dunkirk | David | Along the mole, a Spitfire overhead, "What do you see?" "Home." |
+| The Dark Knight Rises | Nick | Worm's-eye up the Pit, the leap, a burst of bats |
+| Tenet | Ritesh | Red/blue split, inverted twin, phone falls up, palindrome dolly, sounds played backwards |
+| Oppenheimer | Mad Dinh | Mic countdown, white flash, silence, the boom arrives late |
+
+It ends at the premiere on the spinning top, and cuts to black before the top falls.
+
+How it's built:
+- Every scene is its own `THREE.Scene` with a pure `update(u)` that returns the shot and the grade. The film cuts on a fixed timeline (`src/nolan/film.ts`).
+- The film look is one full-screen pass (`src/nolan/post.ts`). It carries a per-scene colour grade: black & white, sepia, the Tenet split, and the flash. On top of that sit grain, a vignette and a faint ink-and-wash paper texture.
+- Scope letterbox bars (2.39:1) with torn-paper edges open up for the IMAX moments. The authored fov keeps its width, so IMAX shows more frame above and below.
+- The crew's board looks (colours, beer, shades, camera, poodle, cap, chain, babies, phone) live in `src/accessories.ts` and are shared with the planet story.
+- The UI portraits are the 3D mascots rendered once to PNG (`src/portraits.ts`).
+- Sound is sampled only: "Heroic Age" by Kevin MacLeod (CC BY 4.0) and Kenney CC0 recordings. The BRAAAM, the applause and the boom are layered and pitched in ffmpeg. The Tenet sounds are reversed buffers.
+
+Dev: `lab.html` lines up the whole dressed cast (`?yaw=0.6&focus=3`).

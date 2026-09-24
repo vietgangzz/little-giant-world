@@ -170,7 +170,7 @@ export function motorbike() {
     [0, base, 0.06], [0, base, -0.07], [0, base, -0.2],
     [0, base + H, 0.06], [0, base + H, -0.07], [0, base + H, -0.2],
     [0, base + H * 2, 0.0], [0, base + H * 2, -0.13],
-    [0, base + H * 3, -0.07],
+    [0, base + H * 3, 0.0], [0, base + H * 3, -0.13],
   ].map(([x, y, z]) => new THREE.Vector3(x, y, z));
   return { group: g, slots, wheels, exhaust: new THREE.Vector3(0.075, 0.06, -0.33) };
 }
