@@ -4,8 +4,8 @@ import { CREW } from "../../crew";
 import { Mascot } from "../../mascot";
 import { easeOutBack } from "../../noise";
 import { inked, toon } from "../../toon";
-import { topHat } from "../costumes";
-import { additive, ball, box, canvasTexture, cyl, lights, move, seg, seeded, shot, V, type FilmSet, type Frame } from "../kit";
+import { topHat } from "../../film/costumes";
+import { additive, ball, box, canvasTexture, cyl, lights, move, seg, seeded, shot, V, type FilmSet, type Frame } from "../../film/kit";
 
 /**
  * THE PRESTIGE — "The Transported Man", Khoa edition. A Victorian stage, a

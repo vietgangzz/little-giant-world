@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW, LITTLE_GIANT, hex } from "../../crew";
 import { Mascot } from "../../mascot";
-import { batSuit, drawMascot, goggles, spaceHelmet, spinningTop, topHat, wearBrodie } from "../costumes";
-import { additive, box, canvasTexture, ease, lights, move, seeded, seg, shot, V, type FilmSet, type Frame } from "../kit";
+import { batSuit, drawMascot, goggles, spaceHelmet, spinningTop, topHat, wearBrodie } from "../../film/costumes";
+import { additive, box, canvasTexture, ease, lights, move, seeded, seg, shot, V, type FilmSet, type Frame } from "../../film/kit";
 
 /**
  * The premiere: the whole cast takes a bow in costume in front of the IMAX

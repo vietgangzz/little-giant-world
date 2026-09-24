@@ -2,9 +2,9 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { toon } from "../../toon";
-import { batSuit, drawMascot } from "../costumes";
-import { additive, around, box, canvasTexture, cyl, lights, move, seeded, shot, skyDome, V, windows, type FilmSet, type Frame } from "../kit";
-import { ease, seg } from "../kit";
+import { batSuit, drawMascot } from "../../film/costumes";
+import { additive, around, box, canvasTexture, cyl, lights, move, seeded, shot, skyDome, V, windows, type FilmSet, type Frame } from "../../film/kit";
+import { ease, seg } from "../../film/kit";
 
 /**
  * THE DARK KNIGHT — Bao Ha on a Gotham ledge, sunglasses doing the work of a

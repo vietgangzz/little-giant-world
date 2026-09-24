@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
-import { box, canvasTexture, cyl, ease, lights, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../kit";
+import { box, canvasTexture, cyl, ease, lights, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
 import { lerp } from "../../noise";
 
 /**

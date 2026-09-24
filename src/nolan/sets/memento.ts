@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { toon } from "../../toon";
-import { polaroid, drawMascot } from "../costumes";
-import { box, canvasTexture, cyl, lights, move, picture, seg, shot, V, type FilmSet, type Frame } from "../kit";
+import { polaroid, drawMascot } from "../../film/costumes";
+import { box, canvasTexture, cyl, lights, move, picture, seg, shot, V, type FilmSet, type Frame } from "../../film/kit";
 
 /**
  * MEMENTO — Phong in a motel room, shaking a polaroid that fades instead of

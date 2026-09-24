@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
-import { spinningTop } from "../costumes";
-import { box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, windows, type FilmSet, type Frame } from "../kit";
+import { spinningTop } from "../../film/costumes";
+import { box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, windows, type FilmSet, type Frame } from "../../film/kit";
 
 /**
  * INCEPTION — Paul walks the poodle down a Paris street while the far half of

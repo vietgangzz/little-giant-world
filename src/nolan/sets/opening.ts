@@ -3,7 +3,7 @@ import { dressed } from "../../accessories";
 import { LITTLE_GIANT } from "../../crew";
 import { easeOutBack } from "../../noise";
 import { inked, toon } from "../../toon";
-import { additive, box, canvasTexture, cyl, glide, lights, move, picture, seg, shot, V, type FilmSet, type Frame } from "../kit";
+import { additive, box, canvasTexture, cyl, glide, lights, move, picture, seg, shot, V, type FilmSet, type Frame } from "../../film/kit";
 
 /**
  * Cold open on the VGang soundstage: Little Giant in a beret on an apple box,

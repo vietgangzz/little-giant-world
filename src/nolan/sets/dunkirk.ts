@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
-import { extra, wearBrodie } from "../costumes";
-import { ball, box, canvasTexture, cyl, ease, glide, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../kit";
+import { extra, wearBrodie } from "../../film/costumes";
+import { ball, box, canvasTexture, cyl, ease, glide, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
 
 /**
  * DUNKIRK — the mole. Soldiers queue down a long wooden pier into a grey sea,

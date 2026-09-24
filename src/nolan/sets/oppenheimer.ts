@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
-import { goggles } from "../costumes";
-import { additive, ball, box, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../kit";
+import { goggles } from "../../film/costumes";
+import { additive, ball, box, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
 
 /**
  * OPPENHEIMER — Trinity, played as a stage show. Mad Dinh counts it down on

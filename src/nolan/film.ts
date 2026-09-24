@@ -1,7 +1,6 @@
-import * as THREE from "three";
-import { CREW, LITTLE_GIANT, type CrewMember } from "../crew";
-import { grade } from "./post";
-import type { Cue, FilmSet, Frame, Grade } from "./kit";
+import { CREW, LITTLE_GIANT } from "../crew";
+import type { SceneDef } from "../film/engine";
+import type { Cue } from "../film/kit";
 import { opening } from "./sets/opening";
 import { memento } from "./sets/memento";
 import { prestige } from "./sets/prestige";
@@ -19,18 +18,6 @@ import { premiere } from "./sets/premiere";
  * minute. Each scene is its own little set with its own camera language and
  * grade; the film cuts between them on a fixed timeline.
  */
-
-export type Caption = { u0: number; u1: number; en: string; vi: string };
-export type Credit = { title: string; vi: string; role: string; roleVi: string };
-export type SceneDef = {
-  id: string;
-  t0: number;
-  t1: number;
-  build: () => FilmSet;
-  member?: CrewMember;
-  credit?: Credit;
-  captions: Caption[];
-};
 
 const who = (handle: string) => CREW.find((c) => c.handle === handle)!;
 const S = 5; // every film gets five seconds
@@ -127,55 +114,9 @@ export const FILM = {
 };
 
 /** Cues that belong to the whole film rather than one set: ticks, the slate claps. */
-const GLOBAL_CUES: [number, Cue][] = [
+export const GLOBAL_CUES: [number, Cue][] = [
   // the Zimmer watch: a tick every second over the cold open, speeding up
   ...[0.25, 1.05, 1.75, 2.35, 2.85, 3.3, 3.7, 4.05, 4.35].map((t): [number, Cue] => [t, { kind: "sfx", name: "tick", volume: 0.55 }]),
   ...SCENES.slice(1).map((s): [number, Cue] => [s.t0 - 0.02, { kind: "sfx", name: "cut", volume: 0.45 }]),
 ];
 
-export class Film {
-  private sets: FilmSet[];
-  private events: { t: number; cue: Cue; scene: number }[] = [];
-  private cursor = 0;
-  private last = -1;
-  private cues: Cue[] = [];
-
-  constructor() {
-    this.sets = SCENES.map((s) => s.build());
-    SCENES.forEach((s, i) => this.sets[i].cues.forEach(([u, cue]) => this.events.push({ t: s.t0 + u, cue, scene: i })));
-    GLOBAL_CUES.forEach(([t, cue]) => this.events.push({ t, cue, scene: -1 }));
-    this.events.sort((a, b) => a.t - b.t);
-  }
-
-  get scenes() { return this.sets.map((s) => s.scene); }
-
-  index(t: number) {
-    const i = SCENES.findIndex((s) => t < s.t1);
-    return i < 0 ? SCENES.length - 1 : i;
-  }
-
-  seek(t: number) {
-    this.cursor = this.events.findIndex((e) => e.t > t);
-    if (this.cursor < 0) this.cursor = this.events.length;
-    this.last = t;
-  }
-
-  drainCues() { const c = this.cues; this.cues = []; return c; }
-
-  update(t: number, fire = true): { scene: THREE.Scene; frame: Frame; grade: Grade; index: number; local: number } {
-    if (fire) {
-      if (t < this.last) this.seek(t);
-      while (this.cursor < this.events.length && this.events[this.cursor].t <= t) this.cues.push(this.events[this.cursor++].cue);
-    }
-    this.last = t;
-    const index = this.index(t);
-    const local = Math.min(t, SCENES[index].t1 - 1e-3) - SCENES[index].t0;
-    const frame = this.sets[index].update(local);
-    return { scene: this.sets[index].scene, frame, grade: grade(frame.grade), index, local };
-  }
-
-  /** Poses each set at its first frame so the renderer can compile every shader up front. */
-  prime(each: (scene: THREE.Scene, frame: Frame) => void) {
-    SCENES.forEach((s, i) => each(this.sets[i].scene, this.sets[i].update(s.t1 - s.t0 - 0.5)));
-  }
-}

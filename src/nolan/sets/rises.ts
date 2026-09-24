@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { toon } from "../../toon";
-import { extra } from "../costumes";
-import { additive, box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../kit";
+import { extra } from "../../film/costumes";
+import { additive, box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
 
 /**
  * THE DARK KNIGHT RISES — the Pit. A deep stone well, a disc of sky at the

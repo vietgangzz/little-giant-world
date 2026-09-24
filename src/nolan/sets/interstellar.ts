@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
-import { spaceHelmet } from "../costumes";
-import { additive, canvasTexture, ease, lights, move, seg, shot, skyDome, V, type FilmSet, type Frame } from "../kit";
+import { spaceHelmet } from "../../film/costumes";
+import { additive, canvasTexture, ease, lights, move, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
 
 /**
  * INTERSTELLAR — Miller's planet. Quan, bubble helmet on, lines up a photo of

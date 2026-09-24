@@ -86,3 +86,28 @@ How it's built:
 - Sound is sampled only: "Heroic Age" by Kevin MacLeod (CC BY 4.0) and Kenney CC0 recordings. The BRAAAM, the applause and the boom are layered and pitched in ffmpeg. The Tenet sounds are reversed buffers.
 
 Dev: `lab.html` lines up the whole dressed cast (`?yaw=0.6&focus=3`).
+
+## The Little Kingdom (`/medieval/`)
+
+A third short, about 65 seconds long. The crew take a wrong turn at the Đông Sơn drum and fall through time into 1326, then drop into a hay cart in the village square. The village hands each of them a job:
+
+| Chapter | Who | Gag |
+| --- | --- | --- |
+| I · The King | Phong | The crown is too big; first royal decree: 1, 2, 3, ZÔ! |
+| II · The Knight | Bao Ha | Sir Shades charges the quintain, the sandbag knocks him into the hay, and the sunglasses survive |
+| III · The Jester | Paul + poodle | Juggling; the poodle jumps the hoop and ends up with all three balls on its nose |
+| IV · The Court Painter | Quan | A portrait takes three months. One camera click, and the sitter faints |
+| V · The Blacksmith | Nick | Forging a sword… it turns out to be a gold chain |
+| VI · The Scribe | David | An illuminated manuscript with a `// TODO: fix bug` in the margin |
+| VII · The Alchemist | Khoa | Potion: babies → frogs → crowned princes |
+| VIII · The Bard | Mad Dinh | Lute plus his own microphone; the tavern dances |
+| IX · The Heretic | Ritesh | In the stocks for a "glowing black mirror"; he goes live to 10k peasants |
+| The Feast | Little Giant | Knighted by King Phong. Long live the VGang kingdom! |
+
+Both films run on the same player (`src/film/player.ts` and `src/film/engine.ts`). A route only supplies its scenes, sounds and words. The medieval wardrobe (crown, helm, jester hat, hood, wizard hat, bard cap) and the set pieces (castle, cottages, horse, stocks) live in `src/medieval/`.
+
+Audio credits:
+- Music: "Master of the Feast" by Kevin MacLeod (CC BY 4.0).
+- Horse gallop by AntumDeluge (OpenGameArt, CC BY).
+- Crowd cheering by Gregor Quendel (OpenGameArt, CC BY).
+- Everything else: Kenney CC0.
