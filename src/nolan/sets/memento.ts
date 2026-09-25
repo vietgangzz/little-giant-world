@@ -3,7 +3,7 @@ import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { toon } from "../../toon";
 import { polaroid, drawMascot } from "../../film/costumes";
-import { box, canvasTexture, cyl, lights, move, picture, seg, shot, V, type FilmSet, type Frame } from "../../film/kit";
+import { box, canvasTexture, cyl, lights, move, picture, seg, shot, V, type FilmSet, type Frame, motes } from "../../film/kit";
 
 /**
  * MEMENTO — Phong in a motel room, shaking a polaroid that fades instead of
@@ -158,7 +158,9 @@ export function memento(): FilmSet {
     [4.25, { kind: "sfx", name: "clink", volume: 0.9 }],
   ];
 
+  const air0 = motes(scene, { count: 140, color: 0xfff4dc, size: 0.04, center: V(-2, 2.5, -1), spread: V(6, 4, 5), rise: 0.05, drift: 0.2, opacity: 0.7 });
   function update(u: number): Frame {
+    air0(u);
     hero.update(u);
     // shaking the polaroid, which fades back to nothing (Memento runs backwards)
     const shaking = u < 2.3;

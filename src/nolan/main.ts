@@ -9,7 +9,7 @@ await runFilm({
   dir: "nolan",
   sounds: [
     "heroic", "tick", "cut", "clap", "braam", "shutter", "shake", "flash", "clink", "cards", "hum", "zap", "wind", "cape", "steps",
-    "rumble", "engine", "horn", "chant", "whoosh", "land", "pop-1", "pop-2", "bats", "shatter", "crash", "mic", "goggles", "boom", "spin", "applause",
+    "rumble", "engine", "horn", "chant", "whoosh", "land", "pop-1", "pop-2", "bats", "shatter", "crash", "mic", "goggles", "boom", "spin", "applause", "gunshot", "fall", "run",
   ],
   music: "heroic",
   musicVolume: 0.6,

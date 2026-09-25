@@ -67,10 +67,10 @@ A second route: VGang Studios restages nine Christopher Nolan scenes in one minu
 | --- | --- | --- |
 | Memento | Phong | B&W polaroid that fades, snap to colour on the wall of notes: 1·2·3 ZÔ! |
 | The Prestige | Khoa | Tesla coil "Transported Man": two babies become eight; symmetrical push-in from the stalls |
-| The Dark Knight | Bao Ha | IMAX helicopter spiral down the tower; bat-signal throws the mascot on the clouds |
+| The Dark Knight | Bao Ha as the Joker | Green hair, white greasepaint, the long red smile. He walks out of Gotham General, clicks the remote, windows blow… a baffled shake… then the whole building |
 | Inception | Paul + poodle | Paris folds over their heads; low tracking shot tilting up |
 | Interstellar | Quan | "Mountains" behind his selfie rise into a wave; the tick of the clock |
-| Dunkirk | David | Along the mole, a Spitfire overhead, "What do you see?" "Home." |
+| Dunkirk | David | The opening run through an empty town under falling leaflets: the squad is shot down one by one, only David makes it over the sandbags |
 | The Dark Knight Rises | Nick | Worm's-eye up the Pit, the leap, a burst of bats |
 | Tenet | Ritesh | Red/blue split, inverted twin, phone falls up, palindrome dolly, sounds played backwards |
 | Oppenheimer | Mad Dinh | Mic countdown, white flash, silence, the boom arrives late |
@@ -98,9 +98,9 @@ A third short, about 65 seconds long. The crew take a wrong turn at the Đông S
 | III · The Jester | Paul + poodle | Juggling; the poodle jumps the hoop and ends up with all three balls on its nose |
 | IV · The Court Painter | Quan | A portrait takes three months. One camera click, and the sitter faints |
 | V · The Blacksmith | Nick | Forging a sword… it turns out to be a gold chain |
-| VI · The Scribe | David | An illuminated manuscript with a `// TODO: fix bug` in the margin |
+| VI · The Slave | David | Ragged sackcloth, mud, iron cuffs and a ball and chain, hauling stones for the king's wall. Diary, day 47: still no salary |
 | VII · The Alchemist | Khoa | Potion: babies → frogs → crowned princes |
-| VIII · The Bard | Mad Dinh | Lute plus his own microphone; the tavern dances |
+| VIII · The Wandering Minstrel | Mad Dinh | Dirty face, torn hat and cloak, singing down a muddy lane at dusk; one coin, which he bites to check |
 | IX · The Heretic | Ritesh | In the stocks for a "glowing black mirror"; he goes live to 10k peasants |
 | The Feast | Little Giant | Knighted by King Phong. Long live the VGang kingdom! |
 
@@ -111,3 +111,5 @@ Audio credits:
 - Horse gallop by AntumDeluge (OpenGameArt, CC BY).
 - Crowd cheering by Gregor Quendel (OpenGameArt, CC BY).
 - Everything else: Kenney CC0.
+
+Face paint and hard-luck looks (`src/film/makeup.ts`) are SVG decals painted onto the curved body: the Joker's greasepaint and smile, mud smears, sackcloth, shackles, a ragged hat and cloak. Every scene also carries its own atmosphere through `motes()` (dust in sunbeams, embers, ash, spray, fireflies) and `flock()` (birds).

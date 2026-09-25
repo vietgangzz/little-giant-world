@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { dressed } from "./accessories";
 import { CREW, LITTLE_GIANT } from "./crew";
+import { cloak, dirt, greenHair, jokerMakeup, purpleSuit, raggedHat, rags, shackles } from "./film/makeup";
 
 /** Dev page: the whole cast in a row, for checking costumes (?yaw=0.6&hat). */
 const params = new URLSearchParams(location.search);
@@ -27,6 +28,11 @@ const cast = [LITTLE_GIANT, ...CREW].map((m, i) => {
   d.root.scale.setScalar(1);
   d.root.position.set((i - 4.5) * 2.9, 0, 0);
   d.root.rotation.y = yaw;
+  if (params.has("looks")) {
+    if (m.handle === "baronha") { d.parts.shades.visible = d.parts.cigarette.visible = d.parts.smoke.visible = false; jokerMakeup(d); greenHair(d); purpleSuit(d); }
+    if (m.handle === "huytdps13400") { d.parts.backpack.visible = false; rags(d); dirt(d); shackles(d); }
+    if (m.handle === "dennytosp") { d.parts.cap.visible = d.parts.bag.visible = d.parts.strap.visible = false; raggedHat(d); cloak(d); dirt(d, 0.8); }
+  }
   scene.add(d.root);
   return d;
 });

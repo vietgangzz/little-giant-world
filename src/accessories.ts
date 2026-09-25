@@ -31,7 +31,7 @@ function strap(points: [number, number][], radius: number, color: number, lift =
 }
 
 /** A flat SVG shape laid on the curved face, with a slight bulge (lenses, badges). */
-function decal(path: string, color: number, lift = 0.03, bulge = 0.03, ink = 0) {
+export function decal(path: string, color: number, lift = 0.03, bulge = 0.03, ink = 0) {
   const art = artwork();
   const svg = new SVGLoader().parse(`<svg xmlns="http://www.w3.org/2000/svg"><path d="${path}"/></svg>`);
   const group = new THREE.Group();
@@ -337,7 +337,9 @@ function rebel(m: Mascot) {
   hat.position.copy(beside(660, 372, 0));
   m.rig.add(hat);
   m.parts.cap = hat;
-  m.rig.add(strap([[448, 481], [560, 540], [680, 596], [790, 640]], 0.045, 0xe4cd99, 0.02, 0.01));
+  const sling = strap([[448, 481], [560, 540], [680, 596], [790, 640]], 0.045, 0xe4cd99, 0.02, 0.01);
+  m.rig.add(sling);
+  m.parts.strap = sling;
   const bag = rounded(0.66, 0.4, 0.2, 0.12, FOREST, 0.02);
   const flap = rounded(0.6, 0.03, 0.21, 0.01, 0xe4cd99, 0);
   flap.position.y = 0.08;

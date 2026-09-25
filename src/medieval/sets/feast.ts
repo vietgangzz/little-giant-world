@@ -1,11 +1,10 @@
 import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW, LITTLE_GIANT } from "../../crew";
-import { toon } from "../../toon";
-import { spaceHelmet } from "../../film/costumes";
-import { ball, box, cyl, ease, lights, move, seeded, seg, shot, V, type FilmSet, type Frame } from "../../film/kit";
+import { ball, box, cyl, ease, lights, move, seeded, seg, shot, V, type FilmSet, type Frame, motes } from "../../film/kit";
 import { archWindow, banner, candle, flicker, room, stoneTex, table, tankard, torch } from "../props";
-import { apron, bardCap, crown, helm, jesterHat, mantle, monkHood, painterBeret, sword, wizardHat } from "../wardrobe";
+import { apron, crown, helm, jesterHat, mantle, painterBeret, sword, wizardHat } from "../wardrobe";
+import { cloak, dirt, raggedHat, rags, shackles } from "../../film/makeup";
 
 /**
  * The feast in the great hall: everyone in their new job's clothes round one
@@ -80,10 +79,9 @@ export function feast(): FilmSet {
   jesterHat(by("giaBaoJS"));
   painterBeret(by("anhquan291")); by("anhquan291").parts.suitcase.visible = false;
   apron(by("tuanngocptn"));
-  monkHood(by("huytdps13400"));
+  { const d = by("huytdps13400"); d.parts.backpack.visible = false; rags(d); dirt(d); shackles(d); }
   wizardHat(by("khoatranthanh"));
-  by("dennytosp").parts.cap.visible = false; bardCap(by("dennytosp"));
-  void spaceHelmet;
+  { const d = by("dennytosp"); d.parts.cap.visible = d.parts.bag.visible = d.parts.strap.visible = false; raggedHat(d); cloak(d); dirt(d, 0.9); }
   const hero = by("vietgang");
   // seats: the king at the head of the table, the rest down both sides
   // the crew along the far side of the table, facing the hall (and us)
@@ -105,7 +103,9 @@ export function feast(): FilmSet {
     [4.0, { kind: "sfx", name: "clink", volume: 1 }],
     [4.05, { kind: "sfx", name: "chant", volume: 0.9 }],
   ];
+  const air0 = motes(scene, { count: 160, color: 0xffc070, size: 0.05, center: V(0, 4, -2), spread: V(18, 8, 16), rise: 0.2, opacity: 0.6, twinkle: true });
   function update(u: number): Frame {
+    air0(u);
     flicker(scene, u);
     people.forEach(({ m }, i) => { m.update(u + i * 0.2); m.cheering = u > 4.0 ? 1 : u > 2.2 && u < 2.9 ? 0.7 : 0; });
     // the king at the head of the table, Little Giant kneeling before him
@@ -126,6 +126,5 @@ export function feast(): FilmSet {
     else s = move(u, 2.8, 5.5, shot(V(0, 3.4, 7.5), V(0, 1.6, -1.2), 42), shot(V(0, 8.8, 10.5), V(0, 2.2, -2), 46), (x) => ease(x));
     return { shot: s, imax: seg(u, 3.6, 4.6), grade: { sat: 1.12, contrast: 1.08, vignette: 0.6, gain: new THREE.Color(1.1, 0.98, 0.86) } };
   }
-  void toon;
   return { scene, update, cues };
 }

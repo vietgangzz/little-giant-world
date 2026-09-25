@@ -1,12 +1,13 @@
 import * as THREE from "three";
 import { dressed } from "../../accessories";
-import { CREW, hex } from "../../crew";
+import { CREW } from "../../crew";
 import { easeOutBack } from "../../noise";
 import { inked, toon } from "../../toon";
 import { drawMascot } from "../../film/costumes";
-import { additive, ball, box, canvasTexture, cyl, ease, lights, move, picture, seg, shot, V, type FilmSet, type Frame } from "../../film/kit";
-import { archWindow, barrel, candle, flicker, plankTex, room, stoneTex, table, torch } from "../props";
-import { apron, hammer, monkHood, painterBeret, quill, villager } from "../wardrobe";
+import { additive, box, canvasTexture, cyl, ease, lights, move, picture, seeded, seg, shot, skyDome, V, type FilmSet, type Frame, flock, motes } from "../../film/kit";
+import { archWindow, barrel,  flicker, grassTex, ground, plankTex, room, stoneTex,  tower, wall } from "../props";
+import { dirt, rags, shackles } from "../../film/makeup";
+import { apron, hammer,  painterBeret, PEASANT,  villager } from "../wardrobe";
 
 const who = (h: string) => CREW.find((c) => c.handle === h)!;
 type Cues = FilmSet["cues"];
@@ -92,7 +93,9 @@ export function painter(): FilmSet {
     [3.8, { kind: "sfx", name: "thud", volume: 0.7 }],
     [3.9, { kind: "pop", text: "*faints*", at: V(-3.4, 3.2, -2.2) }],
   ];
+  const air0 = motes(scene, { count: 150, color: 0xfff4dc, size: 0.04, center: V(-3, 2.5, -1), spread: V(8, 5, 8), rise: 0.05, opacity: 0.7 });
   function update(u: number): Frame {
+    air0(u);
     hero.update(u);
     lady.update(u);
     (flash.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - Math.abs(u - 2.05) / 0.12);
@@ -185,7 +188,9 @@ export function blacksmith(): FilmSet {
     [3.5, { kind: "sfx", name: "jingle", volume: 0.9 }],
     [3.6, { kind: "pop", text: "BLING!", at: V(1.5, 3.6, 0), big: true }],
   ];
+  const air0 = motes(scene, { count: 180, color: 0xffa040, size: 0.06, center: V(-2.5, 3, -2.5), spread: V(6, 6, 5), rise: 0.8, opacity: 0.8, twinkle: true });
   function update(u: number): Frame {
+    air0(u);
     flicker(scene, u);
     hero.update(u);
     (coals.material as THREE.MeshBasicMaterial).color.setHSL(0.06, 1, 0.5 + Math.sin(u * 13) * 0.05);
@@ -218,100 +223,132 @@ export function blacksmith(): FilmSet {
       : move(u, 2.8, 5, shot(V(3.2, 2.3, 5.0), V(1.4, 2.2, -0.7), 40), shot(V(3.6, 2.1, 5.6), V(1.5, 2.5, -0.7), 42));
     return { shot: s, imax: u < 2.8 ? 0.6 : 0, grade: { sat: 1.1, contrast: 1.18, vignette: 0.75, gain: new THREE.Color(1.15, 0.95, 0.8) } };
   }
-  void torch; void ball;
   return { scene, update, cues };
 }
 
-/* ---------------------------------------------------------------- the scribe */
+/* ---------------------------------------------------------------- the slave */
 
-export function scribe(): FilmSet {
+
+export function slave(): FilmSet {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0e0c10);
-  lights(scene, { sky: 0x8a9ac8, ground: 0x2a2018, fill: 0.6, key: 0xaab8ff, keyI: 0.9, from: V(-8, 10, 2), span: 8 });
-  scene.add(room(12, 10, 7, { wall: stoneTex("#8a8076", 12), floor: stoneTex("#5a5048", 13) }));
-  const win = archWindow(1.6, 3.2, 0xc8d4ff);
-  win.position.set(-2, 2.2, -4.95);
-  scene.add(win);
-  // shelves of books
-  [-4.5, 4.5].forEach((x) => {
-    const shelf = box(1.4, 4.5, 0.8, 0x5a3a22, 0.02);
-    shelf.position.set(x, 0, -4.4);
-    scene.add(shelf);
-    for (let r = 0; r < 4; r++) for (let i = 0; i < 6; i++) {
-      const bk = box(0.16, 0.7 + (i % 3) * 0.08, 0.5, [0x8c2f39, 0x2b3f8f, 0x3a6b3a, 0x7a5a2a][(i + r) % 4], 0.006);
-      bk.position.set(x - 0.5 + i * 0.2, 0.3 + r * 1.05, -4.1);
-      scene.add(bk);
-    }
-  });
-  const desk = table(3, 1.6, 1.3, 0x6b4a33);
-  desk.position.set(0, 0, -1.2);
-  scene.add(desk);
-  const lectern = box(2.2, 0.1, 1.2, 0x5a3a22, 0.015);
-  lectern.position.set(0, 1.3, -1.3);
-  lectern.rotation.x = 0.25;
-  scene.add(lectern);
-  // the illuminated page, with a modern note at the bottom
-  const page = picture(2.0, 1.1, canvasTexture(640, 352, (ctx, W, H) => {
-    ctx.fillStyle = "#f3e6c4"; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = "#e0cfa0"; ctx.fillRect(W / 2 - 2, 0, 4, H);
-    const drop = (x: number) => {
-      ctx.fillStyle = "#2b3f8f"; ctx.fillRect(x, 26, 64, 64);
-      ctx.fillStyle = "#e8b64a"; ctx.font = "700 54px Cinzel, serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(x < W / 2 ? "V" : "G", x + 32, 60);
-    };
-    drop(26); drop(W / 2 + 26);
-    ctx.fillStyle = "#3a2a1c"; ctx.font = "400 17px 'IM Fell English', serif"; ctx.textAlign = "left";
-    const lines = ["In principio erat codex,", "et codex erat apud VGang,", "et deploy fiebat die Veneris…", "", "Liber I · caput II"];
-    lines.forEach((l, i) => ctx.fillText(l, 100, 44 + i * 26));
-    ["Hello, world.", "Ora et compila.", "Amen, merge.", ""].forEach((l, i) => ctx.fillText(l, W / 2 + 100, 44 + i * 26));
-    ctx.fillStyle = "#a4161a"; ctx.font = "400 22px 'Permanent Marker', cursive";
-    ctx.fillText("// TODO: fix bug", 40, H - 60);
-    ctx.fillText("before release!!", 60, H - 30);
-    drawMascot(ctx, W * 0.78, H - 110, 90, "#badb96", "#234d37");
-    ctx.strokeStyle = "#c99a3c"; ctx.lineWidth = 6; ctx.strokeRect(12, 12, W - 24, H - 24);
-  }), true);
-  page.position.set(0, 1.42, -1.25);
-  page.rotation.x = -Math.PI / 2 + 0.25;
-  scene.add(page);
-  const candles = [-1.2, 1.2].map((x) => { const c = candle(0.5); c.position.set(x, 1.3, -1.8); scene.add(c); return c; });
-  const warm = new THREE.PointLight(0xffc070, 6, 8, 1.4);
-  warm.position.set(0, 2.4, -2.2);
-  scene.add(warm);
-  const inkpot = cyl(0.12, 0.1, 0.18, 0x1a1a24, 10, 0.01);
-  inkpot.position.set(0.9, 1.3, -0.9);
-  scene.add(inkpot);
+  scene.fog = new THREE.Fog(0xd8b48a, 30, 110);
+  scene.add(skyDome(0x8a6a8a, 0xc8a078, 0xf2b070));
+  lights(scene, { sky: 0xffd8a8, ground: 0x6a5238, fill: 1.2, key: 0xffc080, keyI: 2.2, from: V(-12, 7, 6), span: 14 });
+  // a dusty quarry yard under a low, orange sun
+  const dustTex = canvasTexture(128, 128, (ctx, W, H) => {
+    ctx.fillStyle = "#b8986a"; ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < 300; i++) { ctx.fillStyle = i % 2 ? "#a88a5e" : "#c8a878"; ctx.fillRect((i * 37) % W, (i * 53) % H, 3, 2); }
+  }, [30, 30]);
+  scene.add(ground(dustTex, 200));
+  const hills = ground(grassTex([10, 10]), 400, 0xc8b070);
+  hills.position.y = -0.05;
+  hills.position.z = -150;
+  scene.add(hills);
+  // the king's wall, half built: finished towers, a gap being filled, scaffolding
+  const left = wall(12, 6);
+  left.position.set(-9, 0, -6);
+  const right = wall(10, 6);
+  right.position.set(10, 0, -6);
+  const lowCourse = wall(8, 2.4);
+  lowCourse.position.set(1, 0, -6);
+  const t1 = tower(1.8, 9, 0x8c2f39, 0xe8b64a);
+  t1.position.set(-15.5, 0, -6);
+  const t2 = tower(1.8, 9, 0x8c2f39, 0xe8b64a);
+  t2.position.set(15.5, 0, -6);
+  scene.add(left, right, lowCourse, t1, t2);
+  const wood = 0x8a6a44;
+  [-2.8, 1, 4.8].forEach((x) => [-4.9, -7.1].forEach((z) => { const p = cyl(0.1, 0.1, 6.5, wood, 6, 0.012); p.position.set(x, 0, z); scene.add(p); }));
+  [2.6, 4.8].forEach((y) => { const plank = box(8.4, 0.12, 2.6, wood, 0.012); plank.position.set(1, y, -6); scene.add(plank); });
+  // a treadwheel crane lifting a block
+  const crane = new THREE.Group();
+  const wheel = inked(new THREE.TorusGeometry(1.6, 0.12, 8, 24), toon(wood), 0.02);
+  wheel.position.y = 1.8;
+  for (let i = 0; i < 4; i++) { const spoke = box(0.08, 3.2, 0.08, wood, 0.006); spoke.geometry.translate(0, -1.6, 0); spoke.position.y = 1.8; spoke.rotation.z = (i / 4) * Math.PI; wheel.add(spoke); spoke.position.set(0, 0, 0); }
+  const jib = box(0.2, 0.2, 7, wood, 0.012);
+  jib.position.set(0, 6.2, -1.5);
+  jib.rotation.x = -0.35;
+  const mast = cyl(0.14, 0.14, 6.5, wood, 6, 0.012);
+  const rope = cyl(0.02, 0.02, 3.2, 0xd8c38e, 4, 0);
+  rope.position.set(0, 4.2, -4.6);
+  const hanging = box(1.0, 0.7, 0.8, 0xb3a996, 0.02);
+  hanging.position.set(0, 3.5, -4.6);
+  crane.add(wheel, jib, mast, rope, hanging);
+  crane.position.set(-10, 0, -2.5);
+  crane.rotation.y = 0.5;
+  scene.add(crane);
+  // stacked blocks waiting their turn
+  const rand = seeded(23);
+  for (let i = 0; i < 14; i++) { const b = box(1.1, 0.7, 0.9, [0xb3a996, 0xa89c88, 0xc0b6a2][i % 3], 0.02); b.position.set(6 + (i % 4) * 1.15, Math.floor(i / 4) * 0.7, 1.5 + (rand() - 0.5) * 0.4); b.rotation.y = (rand() - 0.5) * 0.2; scene.add(b); }
+  // the overseer, pointing
+  const boss = villager(0x9aa3ab, 1);
+  boss.parts.kerchief.visible = false;
+  const helmet = inked(new THREE.SphereGeometry(0.62, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon(0xb9c2cc), 0.02);
+  helmet.scale.set(1, 0.8, 0.9);
+  helmet.position.set(0.12, 1.72, 0);
+  boss.rig.add(helmet);
+  boss.root.position.set(5.2, 0, 3.4);
+  boss.root.rotation.y = -1.2;
+  scene.add(boss.root);
+  // two more workers in chains at the far end, for scale
+  const others = [0, 1].map((i) => { const w = villager(PEASANT[i + 3], 2); rags(w, 0x8a7050); w.root.scale.setScalar(0.8); w.root.position.set(-10 + i * 2.2, 0, -2.5); w.root.rotation.y = 0.6; scene.add(w.root); return w; });
+
   const hero = dressed(who("huytdps13400"));
-  hero.root.scale.setScalar(0.9);
-  hero.root.position.set(0.1, 0.55, 0.5);
-  hero.root.rotation.y = Math.PI;
-  monkHood(hero);
-  const stool = cyl(0.6, 0.6, 0.55, 0x5a3a22, 12, 0.02);
-  stool.position.set(0.1, 0, 0.6);
-  scene.add(stool);
-  const q = quill();
-  hero.rightHand.add(q);
-  q.position.set(0, 0.2, 0.1);
-  q.rotation.z = -0.4;
+  hero.root.scale.setScalar(1);
+  hero.parts.backpack.visible = false;
+  rags(hero);
+  dirt(hero, 1);
+  const irons = shackles(hero);
+  const block = box(1.2, 0.75, 0.9, 0x6e6a66, 0.035); // darker than the wall, so it reads against it
+  scene.add(block);
   scene.add(hero.root);
+  const puff = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), additive(0xe8d4a8, 0));
+  scene.add(puff);
 
   const cues: Cues = [
-    [0.2, { kind: "sfx", name: "quill", volume: 0.8 }],
-    [1.2, { kind: "sfx", name: "quill", volume: 0.8 }],
-    [2.2, { kind: "sfx", name: "bell", volume: 0.4 }],
-    [3.3, { kind: "pop", text: "…TODO?!", at: V(0.2, 2.4, -1.2), big: true }],
-    [3.3, { kind: "sfx", name: "pop-2", volume: 0.8 }],
+    ...[0.2, 0.8, 1.4, 2.0].map((t): [number, FilmSet["cues"][number][1]] => [t, { kind: "sfx", name: "chain", volume: 0.7 }]),
+    [0.9, { kind: "pop", text: "*huff* *puff*", at: V(-2, 3.6, 1) }],
+    [2.35, { kind: "sfx", name: "thud", volume: 1 }],
+    [2.4, { kind: "pop", text: "THUD.", at: V(1, 3.2, -5) }],
+    [3.0, { kind: "sfx", name: "quill", volume: 0.8 }],
+    [3.3, { kind: "pop", text: "Day 47: still no salary.", at: V(1.4, 3.3, 1.4), big: true }],
   ];
+  const air0 = motes(scene, { count: 220, color: 0xf2d8a8, size: 0.06, center: V(0, 2, -2), spread: V(20, 4, 12), rise: 0.12, drift: 0.5, opacity: 0.6 });
+  const air1 = flock(scene, 7, V(-14, 14, -30), V(1, 0, 0.2));
   function update(u: number): Frame {
+    air0(u);
+    air1(u);
     flicker(scene, u);
     hero.update(u);
-    hero.rightHand.position.copy(hero.rest.right).add(V(Math.sin(u * 9) * 0.12, 0.3 + Math.abs(Math.sin(u * 14)) * 0.05, 0.4));
-    void candles;
-    let s;
-    if (u < 2.4) s = move(u, 0, 2.4, shot(V(-2.2, 3.4, -4.4), V(0.1, 1.9, 0.4), 40), shot(V(-1.7, 3.2, -4.0), V(0.1, 1.9, 0.4), 38));
-    else s = move(u, 2.4, 5, shot(V(0.0, 3.0, 0.3), V(0, 1.35, -1.3), 32), shot(V(0.0, 2.7, -0.3), V(0, 1.35, -1.25), 30));
-    return { shot: s, grade: { sat: 0.95, contrast: 1.15, vignette: 0.8, gain: new THREE.Color(1.06, 0.98, 0.9) } };
+    boss.update(u);
+    boss.cheering = u < 2.4 ? 0.6 : 0;
+    others.forEach((o, i) => { o.update(u + i); o.rig.position.y = Math.abs(Math.sin(u * 3 + i)) * 0.08; });
+    wheel.rotation.z = u * 0.6;
+    hanging.position.y = 3.5 + Math.sin(u * 0.6) * 0.4;
+    // a heavy trudge with the block held over his head, then drop it on the wall
+    const walk = seg(u, 0, 2.2);
+    const x = -4 + walk * 5;
+    const trudge = Math.abs(Math.sin(u * 4.5));
+    hero.root.position.set(x, trudge * 0.05, -3.4);
+    hero.root.rotation.y = u < 2.4 ? 0.55 : 0.2;
+    hero.rig.rotation.z = u < 2.2 ? Math.sin(u * 4.5) * 0.08 : 0;
+    const lifting = u < 2.3;
+    hero.leftHand.position.copy(hero.rest.left).add(V(0.25, lifting ? 1.3 : 0, 0));
+    hero.rightHand.position.copy(hero.rest.right).add(V(-0.25, lifting ? 1.3 : 0, 0));
+    const drop = seg(u, 2.2, 2.4);
+    block.visible = true;
+    if (u < 2.2) block.position.set(x, 2.15 + trudge * 0.05, -3.35);
+    else block.position.set(1 + 0 * drop, 2.45 - drop * 0.05, -3.4 - drop * 2.2);
+    block.rotation.set(0, 0.55, 0);
+    (puff.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - Math.abs(u - 2.5) / 0.4) * 0.5;
+    puff.position.set(1, 2.6, -5.6);
+    puff.scale.setScalar(1 + seg(u, 2.3, 3) * 1.5);
+    // then sit on a block and write the diary
+    if (u > 2.6) { hero.root.position.set(1.8, 0.35 * seg(u, 2.6, 2.8), -2.8); }
+    hero.parts.notebook.visible = u > 2.8;
+    irons.ball.position.set(1.4, 0.28, 0.9);
+    const s = u < 2.5 ? move(u, 0, 2.5, shot(V(-2.6, 2.4, 4.4), V(-2.0, 2.0, -3.4), 42), shot(V(0.2, 2.4, 4.2), V(0.4, 2.0, -3.6), 42))
+      : move(u, 2.5, 5, shot(V(3.0, 2.2, 3.6), V(1.6, 1.4, -2.8), 38), shot(V(3.3, 2.0, 2.8), V(1.7, 1.5, -2.8), 34));
+    return { shot: s, grade: { sat: 0.82, contrast: 1.1, vignette: 0.65, gain: new THREE.Color(1.12, 0.96, 0.82) } };
   }
-  void plankTex; void ease;
   return { scene, update, cues };
 }
-
-void hex;

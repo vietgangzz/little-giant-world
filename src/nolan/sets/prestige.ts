@@ -5,7 +5,7 @@ import { Mascot } from "../../mascot";
 import { easeOutBack } from "../../noise";
 import { inked, toon } from "../../toon";
 import { topHat } from "../../film/costumes";
-import { additive, ball, box, canvasTexture, cyl, lights, move, seg, seeded, shot, V, type FilmSet, type Frame } from "../../film/kit";
+import { additive, ball, box, canvasTexture, cyl, lights, move, seg, seeded, shot, V, type FilmSet, type Frame, motes } from "../../film/kit";
 
 /**
  * THE PRESTIGE — "The Transported Man", Khoa edition. A Victorian stage, a
@@ -40,11 +40,10 @@ export function prestige(): FilmSet {
 
   // proscenium arch and red curtains
   const gold = 0xc99a3c;
-  const pillars = [-6.6, 6.6].map((x) => { const p = box(0.7, 7.5, 0.7, gold); p.position.set(x, -0.1, -0.6); scene.add(p); return p; });
+  [-6.6, 6.6].forEach((x) => { const p = box(0.7, 7.5, 0.7, gold); p.position.set(x, -0.1, -0.6); scene.add(p); });
   const lintel = box(14, 1.1, 0.7, gold);
   lintel.position.set(0, 6.3, -0.6);
   scene.add(lintel);
-  void pillars;
   const velvet = toon(0x9e1b2c);
   const folds = (x0: number, n: number, dir: number) => {
     for (let i = 0; i < n; i++) {
@@ -150,7 +149,9 @@ export function prestige(): FilmSet {
   ];
   const rand = seeded(9);
 
+  const air0 = motes(scene, { count: 160, color: 0xffe2a0, size: 0.05, center: V(0, 3, 0), spread: V(12, 6, 6), rise: 0.06, opacity: 0.6 });
   function update(u: number): Frame {
+    air0(u);
     hero.update(u);
     // bow, walk into the machine, vanish in the lightning, reappear stage left
     const into = seg(u, 1.0, 1.7);

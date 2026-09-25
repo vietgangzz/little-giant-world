@@ -3,7 +3,7 @@ import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
 import { spaceHelmet } from "../../film/costumes";
-import { additive, canvasTexture, ease, lights, move, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
+import { additive, canvasTexture, ease, lights, move, seg, shot, skyDome, V, type FilmSet, type Frame, motes } from "../../film/kit";
 
 /**
  * INTERSTELLAR — Miller's planet. Quan, bubble helmet on, lines up a photo of
@@ -114,7 +114,9 @@ export function interstellar(): FilmSet {
     [3.3, { kind: "sfx", name: "pop-1", volume: 0.8 }],
   ];
 
+  const air0 = motes(scene, { count: 260, color: 0xeaf6ff, size: 0.05, center: V(0, 3, -4), spread: V(20, 6, 20), rise: -1.2, drift: 0.4, opacity: 0.6 });
   function update(u: number): Frame {
+    air0(u);
     hero.update(u);
     // the "mountains" rise and roll in
     const rise = ease(seg(u, 2.1, 5.0));

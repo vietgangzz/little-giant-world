@@ -3,7 +3,7 @@ import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { toon } from "../../toon";
 import { extra } from "../../film/costumes";
-import { additive, box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
+import { additive, box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame, motes } from "../../film/kit";
 
 /**
  * THE DARK KNIGHT RISES — the Pit. A deep stone well, a disc of sky at the
@@ -109,7 +109,9 @@ export function rises(): FilmSet {
     [3.9, { kind: "pop", text: "RISE!", at: rim.clone().add(V(0, 3, 0)), big: true }],
   ];
 
+  const air0 = motes(scene, { count: 220, color: 0xffe6b0, size: 0.05, center: V(0.5, 12, 0), spread: V(8, 24, 8), rise: 0.12, opacity: 0.6 });
   function update(u: number): Frame {
+    air0(u);
     hero.update(u);
     prisoners.forEach((m, i) => { m.update(u + i); m.rig.position.y = Math.abs(Math.sin(u * 7.2 + (i % 2) * 1.5)) * 0.3; m.cheering = u > 3.7 ? 1 : 0.4; });
     // Nick: ledge 16 → ledge 20.5, then the big one out onto the rim

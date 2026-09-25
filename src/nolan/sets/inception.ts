@@ -3,7 +3,7 @@ import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
 import { spinningTop } from "../../film/costumes";
-import { box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, windows, type FilmSet, type Frame } from "../../film/kit";
+import { box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, windows, type FilmSet, type Frame, flock, motes } from "../../film/kit";
 
 /**
  * INCEPTION — Paul walks the poodle down a Paris street while the far half of
@@ -126,7 +126,11 @@ export function inception(): FilmSet {
     [3.6, { kind: "sfx", name: "pop-2", volume: 0.5 }],
   ];
 
+  const air0 = motes(scene, { count: 120, color: 0xffffff, size: 0.04, center: V(0, 3, 0), spread: V(10, 6, 14), rise: 0.05, opacity: 0.5 });
+  const air1 = flock(scene, 7, V(-8, 16, -30), V(1, 0, 0.2));
   function update(u: number): Frame {
+    air0(u);
+    air1(u);
     hero.update(u);
     // Paul and the pup stroll away from us down the middle of the road
     const walk = u * 1.05;

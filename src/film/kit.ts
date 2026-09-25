@@ -157,3 +157,48 @@ export function seeded(seed: number) {
 export function crowdBob(m: { root: THREE.Object3D; rig: THREE.Object3D }, t: number, amount = 0.08, speed = 6, phase = 0) {
   m.rig.position.y = Math.abs(Math.sin(t * speed + phase)) * amount;
 }
+
+/**
+ * Atmosphere: a drifting cloud of little points (dust in a sunbeam, embers,
+ * ash, fireflies, snow). Returns an update to call with local time.
+ */
+export function motes(scene: THREE.Scene, opts: { count?: number; color?: number; size?: number; center?: THREE.Vector3; spread?: THREE.Vector3; rise?: number; drift?: number; twinkle?: boolean; opacity?: number } = {}) {
+  const n = opts.count ?? 160;
+  const c = opts.center ?? V(0, 3, 0), sp = opts.spread ?? V(12, 6, 12);
+  const rand = seeded(n * 7 + Math.round(c.x * 13));
+  const base = Array.from({ length: n }, () => V((rand() - 0.5) * sp.x, rand() * sp.y, (rand() - 0.5) * sp.z));
+  const phase = Array.from({ length: n }, () => rand() * 10);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  const mat = new THREE.PointsMaterial({ color: opts.color ?? 0xfff2d0, size: opts.size ?? 0.06, transparent: true, opacity: opts.opacity ?? 0.8, depthWrite: false, blending: THREE.AdditiveBlending });
+  const pts = new THREE.Points(geo, mat);
+  pts.frustumCulled = false;
+  pts.position.copy(c).add(V(0, -sp.y / 2, 0));
+  scene.add(pts);
+  const rise = opts.rise ?? 0.15, drift = opts.drift ?? 0.3;
+  return (u: number) => {
+    const pos = geo.getAttribute("position") as THREE.BufferAttribute;
+    for (let i = 0; i < n; i++) {
+      const b = base[i], p = phase[i];
+      const y = ((b.y + u * rise * (0.6 + (p % 1)) ) % sp.y + sp.y) % sp.y;
+      pos.setXYZ(i, b.x + Math.sin(u * 0.7 + p) * drift, y, b.z + Math.cos(u * 0.5 + p) * drift);
+    }
+    pos.needsUpdate = true;
+    if (opts.twinkle) mat.opacity = (opts.opacity ?? 0.8) * (0.6 + Math.sin(u * 5) * 0.4);
+  };
+}
+
+/** A loose flock of birds: little flapping Vs crossing the sky. */
+export function flock(scene: THREE.Scene, count = 7, at = V(0, 14, -30), heading = V(1, 0, 0.2), color = 0x2a2420) {
+  const mat = new THREE.LineBasicMaterial({ color });
+  const birds = Array.from({ length: count }, (_, i) => {
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(-0.5, 0.2, 0), V(0, 0, 0), V(0.5, 0.2, 0)]), mat);
+    scene.add(line);
+    return { line, off: V((i % 3) * -1.4, Math.sin(i * 1.7) * 1.2, Math.floor(i / 3) * 1.2 + (i % 2) * 0.6), ph: i * 0.9 };
+  });
+  const dir = heading.clone().normalize();
+  return (u: number) => birds.forEach((b) => {
+    b.line.position.copy(at).addScaledVector(dir, u * 4 - 14).add(b.off);
+    b.line.scale.y = Math.sin(u * 10 + b.ph) > 0 ? 1 : -0.7;
+  });
+}

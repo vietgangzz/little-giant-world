@@ -2,8 +2,9 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW, LITTLE_GIANT, hex } from "../../crew";
 import { Mascot } from "../../mascot";
-import { batSuit, drawMascot, goggles, spaceHelmet, spinningTop, topHat, wearBrodie } from "../../film/costumes";
-import { additive, box, canvasTexture, ease, lights, move, seeded, seg, shot, V, type FilmSet, type Frame } from "../../film/kit";
+import { drawMascot, goggles, spaceHelmet, spinningTop, topHat, wearBrodie } from "../../film/costumes";
+import { greenHair, jokerMakeup, purpleSuit } from "../../film/makeup";
+import { additive, box, canvasTexture, ease, lights, move, seeded, seg, shot, V, type FilmSet, type Frame, motes } from "../../film/kit";
 
 /**
  * The premiere: the whole cast takes a bow in costume in front of the IMAX
@@ -86,7 +87,7 @@ export function premiere(): FilmSet {
     m.root.position.set((i - 4.5) * 2.2, 1, -8.2 + Math.abs(i - 4.5) * 0.12);
     m.root.rotation.y = -(i - 4.5) * 0.05;
     if (member.handle === "khoatranthanh") topHat(m);
-    if (member.handle === "baronha") { batSuit(m); m.parts.cigarette.visible = m.parts.smoke.visible = false; }
+    if (member.handle === "baronha") { m.parts.shades.visible = m.parts.cigarette.visible = m.parts.smoke.visible = false; jokerMakeup(m); greenHair(m); purpleSuit(m); }
     if (member.handle === "anhquan291") spaceHelmet(m);
     if (member.handle === "huytdps13400") wearBrodie(m, 0x6b7545);
     if (member.handle === "dennytosp") goggles(m).position.y = 0.02;
@@ -127,7 +128,9 @@ export function premiere(): FilmSet {
     [3.6, { kind: "sfx", name: "spin", volume: 0.8 }],
   ];
 
+  const air0 = motes(scene, { count: 180, color: 0xfff4dc, size: 0.05, center: V(0, 6, -2), spread: V(26, 12, 20), rise: 0.05, opacity: 0.5 });
   function update(u: number): Frame {
+    air0(u);
     people.forEach((m, i) => {
       m.update(u + i * 0.1);
       const bow = Math.sin(seg(u, 0.3 + i * 0.07, 1.3 + i * 0.07) * Math.PI);

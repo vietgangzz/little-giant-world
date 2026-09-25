@@ -3,7 +3,7 @@ import { dressed } from "../../accessories";
 import { LITTLE_GIANT } from "../../crew";
 import { easeOutBack } from "../../noise";
 import { inked, toon } from "../../toon";
-import { additive, box, canvasTexture, cyl, glide, lights, move, picture, seg, shot, V, type FilmSet, type Frame } from "../../film/kit";
+import { additive, box, canvasTexture, cyl, glide, lights, move, picture, seg, shot, V, type FilmSet, type Frame, motes } from "../../film/kit";
 
 /**
  * Cold open on the VGang soundstage: Little Giant in a beret on an apple box,
@@ -170,7 +170,9 @@ export function opening(): FilmSet {
     [4.72, { kind: "sfx", name: "clap", volume: 1 }],
   ];
 
+  const air0 = motes(scene, { count: 120, color: 0xfff1c8, size: 0.05, center: V(0, 2.5, 0), spread: V(8, 5, 6), rise: 0.08, opacity: 0.6 });
   function update(u: number): Frame {
+    air0(u);
     director.update(u);
     // he lifts the megaphone and hops as he calls it
     if (u > 3.4 && u < 3.45) director.hop(3.42, 0.5, 0.45);

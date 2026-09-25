@@ -11,7 +11,7 @@ await runFilm({
   dir: "medieval",
   sounds: [
     "feast", "gallop", "cheer", "cheer-soft", "chant", "crowd", "clang", "anvil", "bubble", "splat", "quill", "bell", "plop", "portal",
-    "zap", "sword", "thud", "clink", "cloth", "fire", "dunk", "jingle", "bells", "whoosh", "land", "pop-1", "pop-2", "shutter", "flash", "tick", "braam",
+    "zap", "sword", "thud", "clink", "cloth", "fire", "dunk", "jingle", "bells", "whoosh", "land", "pop-1", "pop-2", "shutter", "flash", "tick", "braam", "chain", "coin",
   ],
   music: "feast",
   musicVolume: 0.55,

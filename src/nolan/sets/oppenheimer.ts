@@ -3,7 +3,7 @@ import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
 import { goggles } from "../../film/costumes";
-import { additive, ball, box, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
+import { additive, ball, box, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame, motes } from "../../film/kit";
 
 /**
  * OPPENHEIMER — Trinity, played as a stage show. Mad Dinh counts it down on
@@ -136,7 +136,9 @@ export function oppenheimer(): FilmSet {
     [3.7, { kind: "pop", text: "KA-BOOM!", at: V(-4, 22, -40), big: true }],
   ];
 
+  const air0 = motes(scene, { count: 240, color: 0xffa050, size: 0.08, center: V(-2, 5, -20), spread: V(40, 14, 40), rise: 0.5, drift: 0.6, opacity: 0.7, twinkle: true });
   function update(u: number): Frame {
+    air0(u);
     hero.update(u);
     const lit = seg(u, 2.2, 2.35);
     // countdown to us, goggles on, then he turns round to watch

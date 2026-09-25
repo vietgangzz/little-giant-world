@@ -3,9 +3,9 @@ import type { SceneDef } from "../film/engine";
 import type { Cue } from "../film/kit";
 import { arrival, portal } from "./sets/arrival";
 import { jester, king, knight } from "./sets/court";
-import { alchemist, bard, heretic } from "./sets/folk";
+import { alchemist, heretic, minstrel } from "./sets/folk";
 import { feast } from "./sets/feast";
-import { blacksmith, painter, scribe } from "./sets/workshops";
+import { blacksmith, painter, slave } from "./sets/workshops";
 
 /**
  * THE LITTLE KINGDOM — the crew fall through a hole in time into 1326, and
@@ -70,11 +70,11 @@ export const SCENES: SceneDef[] = [
     ],
   },
   {
-    id: "scribe", t0: at(5), t1: at(6), build: scribe, member: who("huytdps13400"),
-    credit: { title: "The Scribe", vi: "Chương VI · Thầy Chép Sách", role: "as Brother David", roleVi: "vai thầy tu David" },
+    id: "slave", t0: at(5), t1: at(6), build: slave, member: who("huytdps13400"),
+    credit: { title: "The Slave", vi: "Chương VI · Nô Lệ", role: "in chains, building the king's wall", roleVi: "đeo xiềng xích, xây tường cho vua" },
     captions: [
-      { u0: 0.3, u1: 2.3, en: "Brother David copies the sacred texts…", vi: "Thầy David chép sách thánh…" },
-      { u0: 2.5, u1: 4.9, en: "…with a few TODOs.", vi: "…kèm vài dòng TODO." },
+      { u0: 0.3, u1: 2.3, en: "David hauls stones for the king's wall…", vi: "David khuân đá xây tường thành cho vua…" },
+      { u0: 2.6, u1: 4.9, en: "Dear diary, day 47: still no salary.", vi: "Nhật ký ngày 47: vẫn chưa có lương." },
     ],
   },
   {
@@ -86,11 +86,11 @@ export const SCENES: SceneDef[] = [
     ],
   },
   {
-    id: "bard", t0: at(7), t1: at(8), build: bard, member: who("dennytosp"),
-    credit: { title: "The Bard", vi: "Chương VIII · Người Hát Rong", role: "as the bard (with his own mic)", roleVi: "vai người hát rong (tự mang micro)" },
+    id: "minstrel", t0: at(7), t1: at(8), build: minstrel, member: who("dennytosp"),
+    credit: { title: "The Wandering Minstrel", vi: "Chương VIII · Kẻ Hát Rong", role: "will sing for bread", roleVi: "hát rong đổi lấy bánh mì" },
     captions: [
-      { u0: 0.3, u1: 2.3, en: "Mad Dinh brought a lute. And a microphone.", vi: "Mad Dinh mang theo đàn luýt. Và micro." },
-      { u0: 2.5, u1: 4.9, en: "The tavern has never been this loud.", vi: "Quán rượu chưa bao giờ ồn đến thế." },
+      { u0: 0.3, u1: 2.3, en: "Mad Dinh, the wandering minstrel. Will sing for bread.", vi: "Mad Dinh, kẻ lang thang hát rong. Hát đổi lấy bánh mì." },
+      { u0: 2.5, u1: 4.9, en: "Today's pay: one coin. He bit it, just to check.", vi: "Tiền công hôm nay: một đồng xu. Cắn thử cho chắc." },
     ],
   },
   {

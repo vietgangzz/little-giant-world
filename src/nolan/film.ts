@@ -46,10 +46,11 @@ export const SCENES: SceneDef[] = [
   },
   {
     id: "darkKnight", t0: at(2), t1: at(3), build: darkKnight, member: who("baronha"),
-    credit: { title: "THE DARK KNIGHT", vi: "Kỵ Sĩ Bóng Đêm", role: "as the Dark Knight, in sunglasses", roleVi: "vai Kỵ Sĩ Bóng Đêm đeo kính râm" },
+    credit: { title: "THE DARK KNIGHT", vi: "Kỵ Sĩ Bóng Đêm", role: "as the Joker", roleVi: "vai Joker" },
     captions: [
-      { u0: 0.3, u1: 2.8, en: "Gotham called. They drew our mascot on the sky.", vi: "Gotham gọi. Họ chiếu cả mascot lên trời." },
-      { u0: 3.0, u1: 4.9, en: "Why so serious? It's just the shades.", vi: "Sao nghiêm túc thế? Tại cái kính thôi." },
+      { u0: 0.3, u1: 1.9, en: "Why so serious?", vi: "Sao phải nghiêm trọng thế?" },
+      { u0: 2.0, u1: 3.4, en: "…hang on. …one second…", vi: "…khoan. …chờ chút…" },
+      { u0: 3.5, u1: 4.95, en: "Some men just want to watch the world burn.", vi: "Có những kẻ chỉ muốn nhìn thế giới bốc cháy." },
     ],
   },
   {
@@ -70,10 +71,10 @@ export const SCENES: SceneDef[] = [
   },
   {
     id: "dunkirk", t0: at(5), t1: at(6), build: dunkirk, member: who("huytdps13400"),
-    credit: { title: "DUNKIRK", vi: "Cuộc Di Tản Dunkirk", role: "as the soldier who brought his homework", roleVi: "vai người lính mang theo bài tập" },
+    credit: { title: "DUNKIRK", vi: "Cuộc Di Tản Dunkirk", role: "as the last one running", roleVi: "vai người lính chạy đến cuối cùng" },
     captions: [
-      { u0: 0.3, u1: 2.6, en: "What do you see?", vi: "Cậu thấy gì?" },
-      { u0: 2.9, u1: 4.9, en: "Home.", vi: "Nhà." },
+      { u0: 0.3, u1: 2.9, en: "Run.", vi: "Chạy." },
+      { u0: 3.2, u1: 4.9, en: "Not everyone made it. David did.", vi: "Không phải ai cũng thoát. David thì có." },
     ],
   },
   {

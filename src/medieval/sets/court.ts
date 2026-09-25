@@ -1,9 +1,8 @@
 import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
-import { easeOutBack } from "../../noise";
 import { inked, toon } from "../../toon";
-import { ball, box, canvasTexture, cyl, ease, glide, lights, move, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
+import { ball, box, canvasTexture, cyl, ease, glide, lights, move, seg, shot, skyDome, V, type FilmSet, type Frame, flock, motes } from "../../film/kit";
 import { archWindow, banner, flicker, grassTex, ground, horse, plankTex, room, stoneTex, torch, tower, tree, wall } from "../props";
 import { crown, helm, jesterHat, mantle, PEASANT, shieldVG, villager } from "../wardrobe";
 
@@ -79,7 +78,9 @@ export function king(): FilmSet {
     [4.4, { kind: "sfx", name: "clink", volume: 1 }],
     [4.45, { kind: "sfx", name: "cheer", volume: 0.7 }],
   ];
+  const air0 = motes(scene, { count: 180, color: 0xffe6b0, size: 0.05, center: V(0, 3.5, -3), spread: V(14, 7, 16), rise: 0.05, opacity: 0.6 });
   function update(u: number): Frame {
+    air0(u);
     flicker(scene, u);
     hero.update(u);
     guards.forEach((g, i) => { g.update(u + i); g.cheering = u > 4.4 ? 0.8 : 0; });
@@ -198,7 +199,11 @@ export function knight(): FilmSet {
     [3.9, { kind: "sfx", name: "cheer", volume: 0.8 }],
     [4.0, { kind: "pop", text: "SIR SHADES!", at: V(9, 3.6, 3.5), big: true }],
   ];
+  const air0 = motes(scene, { count: 120, color: 0xf2e2b0, size: 0.05, center: V(0, 1.5, 0), spread: V(30, 3, 8), rise: 0.1, opacity: 0.5 });
+  const air1 = flock(scene, 7, V(-16, 16, -30), V(1, 0, 0.2));
   function update(u: number): Frame {
+    air0(u);
+    air1(u);
     flicker(scene, u);
     hero.update(u);
     crowd.forEach((v, i) => { v.update(u + i); v.rig.position.y = u > 3.9 || (u > 2.4 && u < 2.8) ? Math.abs(Math.sin(u * 9 + i)) * 0.4 : 0; });
@@ -213,11 +218,9 @@ export function knight(): FilmSet {
     // the quintain spins round and the sandbag knocks him clean off
     arm.rotation.y = u < 2.4 ? 0 : -(1 - Math.pow(1 - seg(u, 2.4, 3.8), 3)) * Math.PI * 3.2;
     if (u < 2.95) {
-      const saddle = steed.saddle.clone().applyMatrix4(steed.group.matrixWorld);
       steed.group.updateMatrixWorld();
       hero.root.position.copy(steed.saddle).applyMatrix4(steed.group.matrixWorld).add(V(0, 0.1, 0));
       hero.root.rotation.set(0, Math.PI / 2 - 0.3, 0);
-      void saddle;
     } else {
       const k = seg(u, 2.95, 3.6);
       hero.root.position.copy(glide(u, 2.95, 3.6, V(3.5, 2.6, 0), V(9, 1.7, 3.5), (x) => x));
@@ -283,7 +286,11 @@ export function jester(): FilmSet {
     [3.5, { kind: "pop", text: "TA-DA!", at: V(-1.8, 2.6, 1.2), big: true }],
     [3.6, { kind: "sfx", name: "cheer", volume: 0.8 }],
   ];
+  const air0 = motes(scene, { count: 100, color: 0xffffff, size: 0.05, center: V(0, 3, 0), spread: V(16, 6, 16), rise: 0.06, opacity: 0.5 });
+  const air1 = flock(scene, 7, V(-12, 18, -20), V(1, 0, -0.4));
   function update(u: number): Frame {
+    air0(u);
+    air1(u);
     hero.update(u);
     hero.root.rotation.y = 0.35;
     audience.forEach((v, i) => { v.update(u + i); v.rig.position.y = u > 3.5 ? Math.abs(Math.sin(u * 8 + i)) * 0.35 : 0; v.cheering = u > 3.5 ? 1 : 0; });
@@ -320,6 +327,5 @@ export function jester(): FilmSet {
     const s = shot(V(Math.sin(a) * 8.5 - 1, 2.6, Math.cos(a) * 8.5), V(-1.2, 1.3, 0.4), 36);
     return { shot: s, grade: { sat: 1.12, contrast: 1.05, vignette: 0.45, gain: new THREE.Color(1.04, 1.0, 0.94) } };
   }
-  void easeOutBack;
   return { scene, update, cues };
 }

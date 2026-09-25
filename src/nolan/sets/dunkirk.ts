@@ -3,186 +3,189 @@ import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
 import { extra, wearBrodie } from "../../film/costumes";
-import { ball, box, canvasTexture, cyl, ease, glide, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
+import { ball, box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, windows, type FilmSet, type Frame, flock, motes } from "../../film/kit";
 
 /**
- * DUNKIRK — the mole. Soldiers queue down a long wooden pier into a grey sea,
- * a Spitfire tears overhead, and David (backpack, homework and all) is the
- * first to see the little ships coming. "What do you see?" "Home."
+ * DUNKIRK — the opening: an empty town, leaflets drifting down, a handful of
+ * soldiers running for the beach. Shots ring out and, one by one, they fall.
+ * Only David makes it over the sandbags.
  */
-function spitfire() {
+function house(seed: number, color: string) {
   const g = new THREE.Group();
-  const camo = toon(0x6f7048);
-  const fus = inked(new THREE.CapsuleGeometry(0.42, 3.6, 6, 14), camo, 0.04);
-  fus.rotation.x = Math.PI / 2;
-  const wingShape = new THREE.Shape();
-  wingShape.absellipse(0, 0, 3.8, 1.0, 0, Math.PI * 2, false, 0);
-  const wing = inked(new THREE.ExtrudeGeometry(wingShape, { depth: 0.12, bevelEnabled: false }), camo, 0.035);
-  wing.rotation.x = Math.PI / 2;
-  wing.position.set(0, -0.15, 0.4);
-  const roundel = (r: number) => {
-    const m = new THREE.Mesh(new THREE.CircleGeometry(r, 20), new THREE.MeshBasicMaterial({
-      map: canvasTexture(64, 64, (ctx) => {
-        [["#2b3f8f", 32], ["#f4f1e8", 22], ["#c0262d", 12]].forEach(([c, rr]) => { ctx.fillStyle = c as string; ctx.beginPath(); ctx.arc(32, 32, rr as number, 0, 7); ctx.fill(); });
-      }),
-    }));
-    return m;
-  };
-  [-2.4, 2.4].forEach((x) => { const r = roundel(0.45); r.rotation.x = -Math.PI / 2; r.position.set(x, -0.02, 0.4); g.add(r); });
-  const tail = inked(new THREE.BoxGeometry(0.08, 1.0, 0.9), camo, 0.02);
-  tail.position.set(0, 0.5, -1.9);
-  const stab = inked(new THREE.BoxGeometry(2.2, 0.08, 0.7), camo, 0.02);
-  stab.position.set(0, 0.05, -1.9);
-  const canopy = ball(0.34, toon(0x9fc4d4), 0.02);
-  canopy.scale.set(0.8, 0.7, 1.4);
-  canopy.position.set(0, 0.42, 0.2);
-  const spinner = inked(new THREE.ConeGeometry(0.22, 0.5, 12), toon(0x2b2b2b), 0.015);
-  spinner.rotation.x = Math.PI / 2;
-  spinner.position.z = 2.3;
-  const prop = new THREE.Mesh(new THREE.CircleGeometry(1.3, 24), new THREE.MeshBasicMaterial({ color: 0x3a3a3a, transparent: true, opacity: 0.25, side: THREE.DoubleSide }));
-  prop.position.z = 2.2;
-  g.add(fus, wing, tail, stab, canopy, spinner, prop);
-  return g;
-}
-
-function littleShip(hull: number, cabin: number, seed: number) {
-  const g = new THREE.Group();
-  const shape = new THREE.Shape();
-  shape.moveTo(-1.6, 0.6); shape.lineTo(1.6, 0.6); shape.quadraticCurveTo(1.4, -0.2, 0.4, -0.4); shape.lineTo(-1.2, -0.4); shape.quadraticCurveTo(-1.6, 0, -1.6, 0.6);
-  const body = inked(new THREE.ExtrudeGeometry(shape, { depth: 1.2, bevelEnabled: false }), toon(hull), 0.04);
-  body.rotation.y = Math.PI / 2;
-  body.position.x = -0.6;
-  const house = box(0.9, 0.7, 1.2, cabin, 0.03);
-  house.position.set(0, 0.6, -0.3);
-  const mast = cyl(0.05, 0.04, 2.2, 0x5a3f2e, 6, 0.015);
-  mast.position.set(0, 0.6, 0.5);
-  const flag = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.32), new THREE.MeshBasicMaterial({ color: seed % 2 ? 0xc0262d : 0x2b3f8f, side: THREE.DoubleSide }));
-  flag.position.set(0, 2.6, 0.75);
-  g.add(body, house, mast, flag);
+  const r = seeded(seed + 1);
+  const h = 7 + r() * 3, w = 4.4;
+  const tex = windows(color, "#3a3f46", "#5a5f66", 3, 3, seed + 1, 0.1);
+  g.add(box(w, h, 5, new THREE.MeshToonMaterial({ map: tex }), 0.04));
+  const roofGeo = new THREE.CylinderGeometry(0.1, 3.4, 2.4, 4, 1);
+  roofGeo.rotateY(Math.PI / 4);
+  roofGeo.scale(1, 1, 1.3);
+  const roof = inked(roofGeo, toon(0x5a4a44), 0.03);
+  roof.position.y = h + 1.2;
+  const chimney = box(0.6, 1.6, 0.6, 0x7a4a3a, 0.02);
+  chimney.position.set(1.2, h + 1, 0.6);
+  // shutters, some hanging off their hinges
+  for (let i = 0; i < 3; i++) {
+    const sh = box(0.5, 1.1, 0.08, [0x4a6a5a, 0x6a4a3a, 0x4a5a7a][seed % 3], 0.01);
+    sh.position.set(-1.6 + i * 1.5, h * 0.55, 2.55);
+    sh.rotation.z = r() < 0.3 ? 0.4 : 0;
+    g.add(sh);
+  }
+  g.add(roof, chimney);
   return g;
 }
 
 export function dunkirk(): FilmSet {
   const david = CREW.find((c) => c.handle === "huytdps13400")!;
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xaab4b0, 30, 130);
-  scene.add(skyDome(0x8d9a9c, 0x9eaaa6, 0xc8cdc4));
-  lights(scene, { sky: 0xdfe4dc, ground: 0x7a735e, fill: 1.4, key: 0xf2eee0, keyI: 1.7, from: V(-8, 12, 6), span: 14, focus: V(0, 0, -4) });
+  scene.fog = new THREE.Fog(0xb4bab4, 25, 90);
+  scene.add(skyDome(0x9aa6a4, 0xaab2ac, 0xd4d6cc));
+  lights(scene, { sky: 0xe6eae0, ground: 0x6a665a, fill: 1.4, key: 0xf2eee0, keyI: 1.5, from: V(-8, 14, 6), span: 18, focus: V(0, 0, -10) });
 
-  const sea = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshToonMaterial({
-    color: 0xcfd8d2,
+  // cobbled street between terraces of brick and plaster houses
+  const cobble = new THREE.Mesh(new THREE.PlaneGeometry(10, 120), new THREE.MeshToonMaterial({
     map: canvasTexture(128, 128, (ctx, W, H) => {
-      ctx.fillStyle = "#5f7b78"; ctx.fillRect(0, 0, W, H);
-      ctx.strokeStyle = "rgba(200,214,206,0.5)"; ctx.lineWidth = 2;
-      for (let i = 0; i < 10; i++) { const y = (i * 29) % H, x = (i * 53) % W; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 14, y - 4, x + 28, y); ctx.stroke(); }
-    }, [90, 90]),
+      ctx.fillStyle = "#5e5a52"; ctx.fillRect(0, 0, W, H);
+      const r = seeded(2);
+      for (let y = 0; y < H; y += 12) for (let x = (y / 12) % 2 ? 6 : 0; x < W; x += 12) { ctx.fillStyle = `hsl(35, 6%, ${38 + r() * 12}%)`; ctx.fillRect(x + 1, y + 1, 10, 10); }
+    }, [4, 48]),
   }));
-  sea.rotation.x = -Math.PI / 2;
-  sea.position.y = -0.6;
-  sea.receiveShadow = true;
-  const beach = new THREE.Mesh(new THREE.PlaneGeometry(400, 60), toon(0xcdbb90));
-  beach.rotation.x = -Math.PI / 2;
-  beach.position.set(0, -0.55, 38);
-  beach.receiveShadow = true;
-  scene.add(sea, beach);
-
-  // the mole: planks on piles, running out to sea
-  const L = 70;
-  const deck = box(3.2, 0.3, L, new THREE.MeshToonMaterial({
-    map: canvasTexture(64, 256, (ctx, W) => {
-      for (let i = 0; i < 32; i++) { ctx.fillStyle = i % 2 ? "#8a6a4a" : "#7c5e41"; ctx.fillRect(0, i * 8, W, 8); ctx.fillStyle = "#5a4230"; ctx.fillRect(0, i * 8 + 7, W, 1); }
-    }, [1, 20]),
-  }), 0.03);
-  deck.position.set(0, 0.7, -L / 2 + 8);
-  scene.add(deck);
-  for (let z = 7; z > -L + 8; z -= 3) [-1.5, 1.5].forEach((x) => {
-    const pile = cyl(0.14, 0.14, 1.9, 0x4a3828, 8, 0.015);
-    pile.position.set(x, -0.9, z);
-    scene.add(pile);
+  cobble.rotation.x = -Math.PI / 2;
+  cobble.receiveShadow = true;
+  scene.add(cobble);
+  [-1, 1].forEach((side) => {
+    const walk = box(3, 0.25, 120, 0x8a857a, 0.02);
+    walk.position.set(side * 6.5, 0, 0);
+    scene.add(walk);
+    for (let i = 0; i < 12; i++) {
+      const hs = house(i * 3 + (side > 0 ? 1 : 0), ["#a4543e", "#c8b89a", "#9a6a4a", "#d8ccb4"][(i + (side > 0 ? 1 : 0)) % 4]);
+      hs.position.set(side * 10.6, 0, 20 - i * 5);
+      hs.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+      scene.add(hs);
+    }
   });
-  [-1.55, 1.55].forEach((x) => {
-    const rail = box(0.08, 0.08, L, 0x5a4230, 0.01);
-    rail.position.set(x, 1.6, -L / 2 + 8);
-    scene.add(rail);
-  });
-
-  // soldiers queued in two files, facing the sea
-  const rand = seeded(5);
-  const soldiers = Array.from({ length: 22 }, (_, i) => {
-    const m = extra([0x8c9577, 0x7f8a6d, 0x96917a, 0x8a8f7e][i % 4]);
-    wearBrodie(m);
-    m.root.scale.setScalar(0.62);
-    m.root.position.set(i % 2 ? 0.75 : -0.75, 1.0, -3 - Math.floor(i / 2) * 2.3 - rand() * 0.4);
-    m.root.rotation.y = Math.PI + (rand() - 0.5) * 0.3;
-    scene.add(m.root);
-    return m;
-  });
-  // the town burning on the horizon: a column of smoke
-  const smoke = new THREE.Group();
-  for (let i = 0; i < 14; i++) {
-    const p = ball(3 + i * 0.6, toon(0x4a4a4e), 0);
-    p.position.set(-40 + Math.sin(i) * 3 + i * 1.8, i * 4.2, -90 - i);
-    smoke.add(p);
+  // debris of a town already fought over: crates, a fallen bicycle, lamp posts
+  const rand = seeded(17);
+  for (let i = 0; i < 8; i++) {
+    const crate = box(0.8, 0.7, 0.8, 0x8a6a4a, 0.02);
+    crate.position.set((rand() < 0.5 ? -1 : 1) * (4 + rand() * 1.2), 0.25, -30 + rand() * 40);
+    crate.rotation.y = rand();
+    scene.add(crate);
   }
-  scene.add(smoke);
+  const bike = new THREE.Group();
+  [-0.55, 0.55].forEach((z) => { const w = inked(new THREE.TorusGeometry(0.35, 0.04, 6, 18), toon(0x1c1a1c), 0.008); w.position.set(0, 0.36, z); w.rotation.y = Math.PI / 2; bike.add(w); });
+  const frame = box(0.06, 0.06, 1.1, 0x3a4a3a, 0.006);
+  frame.position.y = 0.6;
+  bike.add(frame);
+  bike.position.set(-4.3, 0.05, -14);
+  bike.rotation.set(0, 0.3, Math.PI / 2 - 0.1);
+  scene.add(bike);
+  for (let z = -40; z < 12; z += 10) { const post = cyl(0.08, 0.06, 4.6, 0x2b2b2b, 8, 0.012); post.position.set(4.9, 0.25, z); scene.add(post); }
 
+  // the French sandbag barricade the survivor has to reach
+  const barricade = new THREE.Group();
+  for (let row = 0; row < 3; row++) for (let i = 0; i < 9; i++) {
+    const bag = ball(0.42, 0xb8a67e, 0.02, 10);
+    bag.scale.set(1.3, 0.55, 0.8);
+    bag.position.set(-3.6 + i * 0.9 + (row % 2) * 0.45, 0.25 + row * 0.42, 0);
+    barricade.add(bag);
+  }
+  barricade.position.set(0, 0, -4);
+  scene.add(barricade);
+  const poilu = extra(0x8a96a8);
+  wearBrodie(poilu, 0x5a6a8a);
+  poilu.root.scale.setScalar(0.8);
+  poilu.root.position.set(2.3, 0, -3);
+  poilu.root.rotation.y = Math.PI;
+  scene.add(poilu.root);
+  const rifle = box(0.08, 0.08, 1.4, 0x5a3a22, 0.008);
+  rifle.position.set(0, 0, 0.5);
+  poilu.rightHand.add(rifle);
+
+  // leaflets drifting down: "WE SURROUND YOU"
+  const leafTex = canvasTexture(64, 88, (ctx, W) => {
+    ctx.fillStyle = "#efe6cc"; ctx.fillRect(0, 0, W, 88);
+    ctx.fillStyle = "#2b2b2b"; ctx.font = "700 11px Oswald, sans-serif"; ctx.textAlign = "center";
+    ["WE", "SURROUND", "YOU"].forEach((w, i) => ctx.fillText(w, W / 2, 26 + i * 16));
+    ctx.fillRect(10, 70, 44, 3);
+  });
+  const leaflets = Array.from({ length: 40 }, () => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.46), new THREE.MeshBasicMaterial({ map: leafTex, side: THREE.DoubleSide }));
+    scene.add(m);
+    return { m, x: (rand() - 0.5) * 12, z: -34 + rand() * 40, h: 4 + rand() * 12, ph: rand() * 10 };
+  });
+
+  // the squad, running at us. Everyone but David goes down.
+  const runners = Array.from({ length: 5 }, (_, i) => {
+    const m = extra([0x8c9577, 0x7f8a6d, 0x96917a, 0x8a8f7e, 0x8c9577][i]);
+    const helmet = wearBrodie(m);
+    m.root.scale.setScalar(0.75);
+    scene.add(m.root);
+    return { m, helmet, x: [-2.4, 1.8, -0.9, 2.6, -2.9][i], z0: -27 - i * 1.3, falls: [0.9, 1.5, 2.05, 2.55, 3.0][i], speed: 5.2 - i * 0.1 };
+  });
   const hero = dressed(david);
   hero.root.scale.setScalar(0.8);
-  hero.root.position.set(0.85, 1.0, -0.6);
-  hero.root.rotation.y = Math.PI - 0.3;
   wearBrodie(hero, 0x6b7545);
   scene.add(hero.root);
 
-  const plane = spitfire();
-  scene.add(plane);
-  const ships = [[0xf4f1e8, 0x2b3f8f], [0x2b3f8f, 0xf4f1e8], [0xc0262d, 0xf4f1e8], [0xf4f1e8, 0x6b8f6b], [0x3a6b8f, 0xe8dcc0], [0xe8dcc0, 0xc0262d], [0x4a5a3a, 0xf4f1e8]]
-    .map(([h, c], i) => {
-      const s = littleShip(h, c, i);
-      s.position.set(-16 + i * 5.5 + rand() * 2, -0.6, -70 - rand() * 12);
-      s.rotation.y = Math.PI + (rand() - 0.5) * 0.5;
-      scene.add(s);
-      return s;
-    });
-
   const cues: FilmSet["cues"] = [
-    ...[0.1, 0.6, 1.05, 1.45, 1.8, 2.1, 2.35].map((t): [number, FilmSet["cues"][number][1]] => [t, { kind: "sfx", name: "tick", volume: 0.7, rate: 1.1 }]),
-    [0.9, { kind: "sfx", name: "engine", volume: 0.9 }],
-    [3.7, { kind: "sfx", name: "horn", volume: 0.8 }],
-    [3.9, { kind: "pop", text: "HOME!", at: V(4, 5, -30), big: true }],
+    [0.1, { kind: "sfx", name: "run", volume: 0.8 }],
+    ...runners.flatMap((r): [number, FilmSet["cues"][number][1]][] => [
+      [r.falls - 0.05, { kind: "sfx", name: "gunshot", volume: 0.9 }],
+      [r.falls + 0.35, { kind: "sfx", name: "fall", volume: 0.7 }],
+    ]),
+    [1.0, { kind: "sfx", name: "run", volume: 0.8 }],
+    [2.0, { kind: "sfx", name: "tick", volume: 0.9, rate: 1.2 }],
+    [3.4, { kind: "sfx", name: "whoosh", volume: 0.8 }],
+    [3.9, { kind: "sfx", name: "land", volume: 0.9 }],
+    [4.0, { kind: "pop", text: "MADE IT!", at: V(0.6, 3.2, -1.5), big: true }],
   ];
 
+  const air0 = motes(scene, { count: 200, color: 0xd0ccc4, size: 0.06, center: V(0, 5, -12), spread: V(12, 10, 40), rise: -0.4, opacity: 0.5 });
+  const air1 = flock(scene, 7, V(-12, 18, -40), V(1, 0, 0.2));
   function update(u: number): Frame {
+    air0(u);
+    air1(u);
     hero.update(u);
-    soldiers.forEach((m, i) => {
-      m.update(u + i);
-      m.rig.position.y = u > 3.7 ? Math.abs(Math.sin(u * 9 + i)) * 0.35 : 0;
-      m.rig.rotation.y = u > 1.4 && u < 2.8 ? Math.sin(seg(u, 1.4, 2.8) * Math.PI) * -0.5 : 0; // everyone looks up at the plane
+    poilu.update(u);
+    leaflets.forEach((l, i) => {
+      const y = l.h - ((u * 0.9 + l.ph) % 14);
+      l.m.position.set(l.x + Math.sin(u * 1.4 + i) * 0.6, Math.max(0.03, y), l.z);
+      l.m.rotation.set(y > 0.05 ? u * 2 + i : -Math.PI / 2, u * 1.3 + i, y > 0.05 ? Math.sin(u * 3 + i) : 0);
     });
-    hero.cheering = u > 3.7 ? 1 : 0;
-    // the Spitfire: from behind the camera, low over the mole, out to sea
-    plane.position.copy(glide(u, 0.9, 2.9, V(6, 7, 26), V(-8, 9, -90), (k) => k));
-    plane.lookAt(V(-8, 9, -90));
-    plane.rotateZ(0.35);
-    (plane.children[plane.children.length - 1] as THREE.Mesh).rotation.z = u * 60;
-    ships.forEach((s, i) => {
-      s.position.z = -78 + i * 0.8 + ease(seg(u, 2.6, 5)) * 26;
-      s.position.y = -0.55 + Math.sin(u * 2 + i) * 0.08;
-      s.rotation.z = Math.sin(u * 1.6 + i) * 0.05;
+    // runners: sprint, get hit, pitch forward onto their faces and lie still
+    runners.forEach((r, i) => {
+      r.m.update(u + i);
+      const t = Math.min(u, r.falls);
+      const z = r.z0 + t * r.speed;
+      const hit = seg(u, r.falls, r.falls + 0.4);
+      r.m.root.position.set(r.x + Math.sin(t * 9 + i) * 0.08, hit > 0 ? 0 : Math.abs(Math.sin(u * 11 + i)) * 0.25, z + hit * 0.9);
+      r.m.root.rotation.set(ease(hit) * Math.PI * 0.47, (i % 2 ? 0.08 : -0.08) * (1 - hit), 0);
+      r.m.rig.rotation.x = hit > 0 ? 0 : 0.2;
+      r.m.leftHand.position.y = hit > 0 ? 0.3 : 0.8 + Math.sin(u * 11 + i) * 0.25;
+      r.m.rightHand.position.y = hit > 0 ? 0.3 : 0.8 - Math.sin(u * 11 + i) * 0.25;
+      // the helmet comes off and rolls away
+      const roll = seg(u, r.falls + 0.15, r.falls + 0.9);
+      r.helmet.position.set(0.12 + roll * 0.8, 2.0 - roll * 0.5, roll * 1.6);
+      r.helmet.rotation.x = roll * 4;
     });
+    // David: flat out down the middle, then over the sandbags
+    const z = -24 + Math.min(u, 3.35) * 5.1;
+    const vault = seg(u, 3.35, 3.9);
+    hero.root.position.set(0.3 + Math.sin(u * 9) * 0.1, Math.abs(Math.sin(u * 11)) * 0.28 * (1 - vault) + Math.sin(vault * Math.PI) * 1.6, z + vault * 3.2);
+    hero.root.rotation.set(vault > 0 && vault < 1 ? -Math.sin(vault * Math.PI) * 0.4 : 0.15, 0, 0);
+    if (u > 3.9) { hero.root.position.set(0.3, 0, -0.5 + seg(u, 3.9, 5) * 0.8); hero.root.rotation.set(0, 0.2, 0); }
+    hero.cheering = u > 4.0 ? 0.6 : 0;
 
     let s;
-    if (u < 2.5) {
-      // down the length of the mole, low over the planks
-      s = move(u, 0, 2.5, shot(V(2.1, 1.9, 7.4), V(-0.2, 1.6, -30), 34), shot(V(1.9, 1.8, 6.2), V(-0.2, 1.8, -30), 34));
-      if (u > 1.3) s.look.lerp(plane.position, Math.sin(seg(u, 1.3, 2.5) * Math.PI) * 0.25);
-    } else if (u < 3.6) {
-      // his face as he sees them
-      s = move(u, 2.5, 3.6, shot(V(0.3, 1.9, -4.9), V(0.85, 1.7, -0.6), 30), shot(V(0.35, 1.9, -4.4), V(0.85, 1.75, -0.6), 28));
+    if (u < 3.2) {
+      // backing down the street just ahead of him, low, as the others drop around him
+      s = shot(V(2.2, 3.0, z + 8.5), V(0, 0.9, z - 5), 42);
     } else {
-      // over his shoulder: the little ships, all of them
-      s = move(u, 3.6, 5, shot(V(2.4, 3.0, 4.4), V(-0.4, 1.0, -50), 32), shot(V(2.6, 3.2, 5.4), V(-0.4, 1.4, -50), 36));
+      // from behind the barricade as he comes over it
+      s = move(u, 3.2, 5, shot(V(-1.4, 1.5, 2.5), V(0.2, 1.4, -8), 42), shot(V(-1.8, 1.7, 3.4), V(0.2, 1.3, -6), 42));
     }
-    return { shot: s, imax: u < 2.5 ? 0 : seg(u, 3.6, 4.2), grade: { sat: 0.6, contrast: 1.12, vignette: 0.6, lift: new THREE.Color(0.02, 0.03, 0.03), gain: new THREE.Color(1.02, 1.0, 0.94) } };
+    const shakeAmt = runners.some((r) => Math.abs(u - r.falls) < 0.08) ? 0.12 : 0.02;
+    return { shot: s, shake: shakeAmt, grade: { sat: 0.58, contrast: 1.14, vignette: 0.65, lift: new THREE.Color(0.02, 0.03, 0.03), gain: new THREE.Color(1.02, 1.0, 0.94) } };
   }
   return { scene, update, cues };
 }

@@ -3,9 +3,10 @@ import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { easeOutBack } from "../../noise";
 import { inked, toon } from "../../toon";
-import { additive, ball, box, canvasTexture, cyl, ease, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
-import { barrel, candle, cobbleTex, cottage, flicker, ground, plankTex, room, stall, stocks, stoneTex, table, tankard, torch } from "../props";
-import { bardCap, crown, lute, PEASANT, villager, wizardHat } from "../wardrobe";
+import { additive, ball, box, canvasTexture, cyl, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame, flock, motes } from "../../film/kit";
+import { barrel, cobbleTex, cottage, flicker, ground,   stall, stocks, stoneTex } from "../props";
+import {  lute, PEASANT, villager, wizardHat } from "../wardrobe";
+import { cloak, dirt, raggedHat } from "../../film/makeup";
 
 const who = (h: string) => CREW.find((c) => c.handle === h)!;
 type Cues = FilmSet["cues"];
@@ -98,8 +99,6 @@ export function alchemist(): FilmSet {
     (b.children[0] as THREE.Object3D).add(c);
     return c;
   });
-  void crown;
-
   const cues: Cues = [
     [0.1, { kind: "sfx", name: "bubble", volume: 0.8 }],
     [1.0, { kind: "sfx", name: "bubble", volume: 0.8 }],
@@ -110,7 +109,9 @@ export function alchemist(): FilmSet {
     [3.3, { kind: "pop", text: "✨ PRINCES! ✨", at: V(0.8, 2.6, 1.2), big: true }],
     [3.4, { kind: "sfx", name: "jingle", volume: 0.8 }],
   ];
+  const air0 = motes(scene, { count: 160, color: 0x9dffb0, size: 0.07, center: V(0, 3, -1), spread: V(10, 6, 10), rise: 0.3, opacity: 0.8, twinkle: true });
   function update(u: number): Frame {
+    air0(u);
     hero.update(u);
     bubbles.forEach((b, i) => { const k = (u * 0.8 + b.userData.p) % 1; b.position.set(Math.sin(i * 2.3) * 0.6, 1.8 + k * 1.4, -1.6 + Math.cos(i * 1.7) * 0.5); b.scale.setScalar(1 - k); });
     (brew.material as THREE.MeshBasicMaterial).color.setHSL(0.36 + (u > 3.2 ? 0.5 : 0) * seg(u, 3.2, 3.6), 1, 0.6 + Math.sin(u * 8) * 0.05);
@@ -134,90 +135,6 @@ export function alchemist(): FilmSet {
     const a = -0.3 + u * 0.12;
     const s = shot(V(Math.sin(a) * 6.2, 3.0, Math.cos(a) * 6.2 - 0.3), V(0.3, 1.3, -0.4), 40);
     return { shot: s, grade: { sat: 1.15, contrast: 1.12, vignette: 0.8, gain: new THREE.Color(0.95, 1.05, 1.08) } };
-  }
-  return { scene, update, cues };
-}
-
-/* ---------------------------------------------------------------- the bard */
-
-export function bard(): FilmSet {
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1a1210);
-  lights(scene, { sky: 0xffd8a8, ground: 0x3a2418, fill: 1.0, key: 0xffe0b0, keyI: 1.5, from: V(-4, 9, 7), span: 10 });
-  scene.add(room(16, 12, 6, { wall: plankTex("#8a6448"), floor: plankTex("#6a4a30") }));
-  // beams, fireplace, bar and barrels
-  for (let x = -6; x <= 6; x += 3) { const beam = box(0.4, 0.4, 12, 0x4a3020, 0.02); beam.position.set(x, 5.4, 0); scene.add(beam); }
-  const hearth = box(3.4, 2.4, 1, 0x6b5f55, 0.03);
-  hearth.position.set(-4.5, 0, -5.5);
-  const flames = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.2, 10), new THREE.MeshBasicMaterial({ color: 0xff8a30 }));
-  flames.position.set(-4.5, 0.7, -5.0);
-  flames.userData.flame = flames;
-  const fireL = new THREE.PointLight(0xff8a40, 16, 10, 1.4);
-  fireL.position.set(-4.5, 1.2, -4.4);
-  flames.userData.light = fireL;
-  scene.add(hearth, flames, fireL);
-  const bar = box(5, 1.3, 1, 0x5a3a22, 0.02);
-  bar.position.set(4.5, 0, -4.4);
-  scene.add(bar);
-  [[5.8, -5.6], [4.6, -5.6], [3.4, -5.6]].forEach(([x, z]) => { const b = barrel(); b.position.set(x, 1.3, z); b.rotation.x = Math.PI / 2; b.position.y = 1.7; scene.add(b); });
-  [[-6.5, 2], [6.5, 1]].forEach(([x, z]) => { const t = torch(); t.position.set(x, 2.6, z); scene.add(t); });
-  // the stage: a table he's standing on
-  const stageT = table(2.6, 1.6, 0.9);
-  stageT.position.set(0, 0, -2.5);
-  scene.add(stageT);
-  const hero = dressed(who("dennytosp"));
-  hero.root.scale.setScalar(0.95);
-  hero.root.position.set(0, 0.9, -2.5);
-  hero.parts.cap.visible = false;
-  bardCap(hero);
-  const l = lute();
-  hero.leftHand.add(l);
-  l.position.set(0.5, -0.1, 0.35);
-  l.rotation.z = -0.9;
-  l.scale.setScalar(0.9);
-  scene.add(hero.root);
-  // the regulars, dancing with tankards
-  const patrons = Array.from({ length: 8 }, (_, i) => {
-    const v = villager(PEASANT[i], i);
-    v.root.scale.setScalar(0.72);
-    const a = (i / 8) * Math.PI * 2;
-    v.root.position.set(Math.sin(a) * 3.6, 0, -1.2 + Math.cos(a) * 2.4);
-    const tk = tankard();
-    v.rightHand.add(tk);
-    tk.position.set(0.1, 0, 0.1);
-    scene.add(v.root);
-    return { v, a };
-  });
-  const notes = Array.from({ length: 8 }, (_, i) => {
-    const tex = canvasTexture(64, 64, (ctx) => { ctx.fillStyle = ["#ffc93c", "#c6df70", "#ff8fa3"][i % 3]; ctx.font = "700 52px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(i % 2 ? "♪" : "♫", 32, 34); });
-    const n = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.6), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
-    scene.add(n);
-    return n;
-  });
-  const cues: Cues = [
-    [0.3, { kind: "pop", text: "♪ Hey nonny nonny! ♪", at: V(0, 4.4, -2.3) }],
-    [1.6, { kind: "sfx", name: "clink", volume: 0.8 }],
-    [2.4, { kind: "sfx", name: "chant", volume: 0.7 }],
-    [3.1, { kind: "pop", text: "ENCORE!", at: V(-2.6, 3.0, 0) }],
-    [3.8, { kind: "sfx", name: "clink", volume: 0.9 }],
-    [3.9, { kind: "pop", text: "YO-HO!", at: V(2.4, 3.2, 0.2), big: true }],
-  ];
-  function update(u: number): Frame {
-    flicker(scene, u);
-    hero.update(u);
-    hero.rig.rotation.z = Math.sin(u * 7) * 0.08;
-    hero.cheering = 0.5 + Math.sin(u * 7) * 0.2;
-    l.rotation.z = -0.9 + Math.sin(u * 14) * 0.05;
-    patrons.forEach(({ v, a }, i) => {
-      v.update(u + i);
-      const aa = a + u * 0.6;
-      v.root.position.set(Math.sin(aa) * 4.2, Math.abs(Math.sin(u * 7 + i)) * 0.35, -1.6 + Math.cos(aa) * 2.2);
-      v.root.rotation.y = aa + Math.PI / 2;
-      v.cheering = u > 1.5 ? 0.8 : 0.3;
-    });
-    notes.forEach((n, i) => { const k = (u * 0.5 + i / 8) % 1; n.position.set(Math.sin(i * 2.1 + u) * 1.6, 3 + k * 2.4, -2.3 + Math.cos(i * 1.3) * 0.6); n.lookAt(0, 3, 10); (n.material as THREE.MeshBasicMaterial).opacity = 1 - k; });
-    const s = move(u, 0, 5, shot(V(-3.2, 4.2, 6.8), V(0, 2.4, -2.4), 40), shot(V(3.0, 4.0, 6.6), V(0, 2.5, -2.4), 40));
-    return { shot: s, grade: { sat: 1.12, contrast: 1.1, vignette: 0.65, gain: new THREE.Color(1.1, 0.98, 0.86) } };
   }
   return { scene, update, cues };
 }
@@ -297,7 +214,11 @@ export function heretic(): FilmSet {
     [3.2, { kind: "sfx", name: "cheer-soft", volume: 0.8 }],
     [3.6, { kind: "pop", text: "Am I on?!", at: V(3.5, 3.2, 3.8) }],
   ];
+  const air0 = motes(scene, { count: 100, color: 0xfff6e0, size: 0.05, center: V(0, 3, -2), spread: V(20, 5, 16), rise: 0.06, opacity: 0.5 });
+  const air1 = flock(scene, 7, V(-14, 16, -25), V(1, 0, 0.2));
   function update(u: number): Frame {
+    air0(u);
+    air1(u);
     hero.update(u);
     hero.leftHand.position.copy(hero.rest.left);
     hero.rightHand.position.copy(hero.rest.right);
@@ -323,6 +244,163 @@ export function heretic(): FilmSet {
       : move(u, 2.5, 5, shot(V(1.2, 2.2, 3.0), V(-0.9, 1.6, -0.8), 38), shot(V(2.6, 2.8, 8.8), V(0.4, 1.6, 1.5), 44));
     return { shot: s, grade: { sat: 1.05, contrast: 1.06, vignette: 0.5, gain: new THREE.Color(1.05, 1.0, 0.93) } };
   }
-  void candle; void ease; void cyl;
+  return { scene, update, cues };
+}
+
+/* ---------------------------------------------------------------- the wandering minstrel */
+
+function chicken(seed: number) {
+  const g = new THREE.Group();
+  const body = ball(0.28, 0xf6f0e2, 0.015, 10);
+  body.scale.set(1, 0.85, 1.25);
+  body.position.y = 0.3;
+  const head = ball(0.14, 0xf6f0e2, 0.012, 8);
+  head.position.set(0, 0.55, 0.28);
+  const comb = ball(0.07, 0xd62828, 0, 6);
+  comb.scale.set(0.5, 1, 1.2);
+  comb.position.set(0, 0.7, 0.28);
+  const beak = inked(new THREE.ConeGeometry(0.04, 0.1, 5), toon(0xf2b705), 0);
+  beak.rotation.x = Math.PI / 2;
+  beak.position.set(0, 0.54, 0.42);
+  const tail = ball(0.12, 0xe8e0d0, 0.01, 6);
+  tail.position.set(0, 0.45, -0.3);
+  g.add(body, head, comb, beak, tail);
+  g.userData.head = head;
+  g.userData.seed = seed;
+  return g;
+}
+
+export function minstrel(): FilmSet {
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0xc88a6a, 25, 90);
+  scene.add(skyDome(0x5a4a7a, 0xc8906a, 0xffb070));
+  lights(scene, { sky: 0xffc8a0, ground: 0x4a3a2a, fill: 1.1, key: 0xffa060, keyI: 2.0, from: V(12, 6, 6), span: 14 });
+  // a muddy lane between cottages at dusk
+  const mud = canvasTexture(128, 128, (ctx, W, H) => {
+    ctx.fillStyle = "#6a5238"; ctx.fillRect(0, 0, W, H);
+    const r = seeded(6);
+    for (let i = 0; i < 260; i++) { ctx.fillStyle = r() < 0.5 ? "#5a4430" : "#7a6044"; ctx.beginPath(); ctx.ellipse(r() * W, r() * H, 3 + r() * 5, 2 + r() * 2, 0, 0, 7); ctx.fill(); }
+  }, [20, 20]);
+  scene.add(ground(mud, 160));
+  const rand = seeded(44);
+  // puddles reflecting the sky
+  for (let i = 0; i < 7; i++) {
+    const p = new THREE.Mesh(new THREE.CircleGeometry(0.6 + rand() * 0.9, 20), new THREE.MeshBasicMaterial({ color: 0xe8a07a }));
+    p.rotation.x = -Math.PI / 2;
+    p.scale.set(1.6, 1, 1);
+    p.position.set((rand() - 0.5) * 7, 0.015, -12 + rand() * 16);
+    scene.add(p);
+  }
+  // cottages with warm windows on both sides
+  ([[-7, -3, 0.9], [-8, -10, 1.1], [7, -4, -0.9], [8.5, -11, -1.2], [-6, -18, 0.6], [6, -18, -0.5]] as [number, number, number][]).forEach(([x, z, r], i) => {
+    const c = cottage([0xdcc9a6, 0xe8dcc0, 0xcdb894][i % 3], i + 11);
+    c.position.set(x, 0, z);
+    c.rotation.y = r;
+    c.scale.setScalar(1.25);
+    scene.add(c);
+  });
+  // a lantern on a post, a cart wheel, a hay pile, a barrel
+  const post = cyl(0.08, 0.08, 3, 0x4a3a2a, 6, 0.012);
+  post.position.set(3, 0, 0.5);
+  const lantern = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.3), new THREE.MeshBasicMaterial({ color: 0xffd080 }));
+  lantern.position.set(3, 2.9, 0.5);
+  const lampLight = new THREE.PointLight(0xffb060, 8, 8, 1.4);
+  lampLight.position.set(3, 2.7, 0.8);
+  lantern.userData.flame = lantern;
+  lantern.userData.light = lampLight;
+  scene.add(post, lantern, lampLight);
+  const wheel = inked(new THREE.TorusGeometry(0.6, 0.07, 6, 18), toon(0x5a3a22), 0.012);
+  wheel.position.set(-3.4, 0.55, -1);
+  wheel.rotation.set(0.2, 0.8, 0);
+  const hay = ball(1.1, 0xd9b860, 0.03, 12);
+  hay.scale.y = 0.55;
+  hay.position.set(-4.2, 0.3, -3.5);
+  const b = barrel();
+  b.position.set(4.2, 0, -2.4);
+  scene.add(wheel, hay, b);
+  const chickens = Array.from({ length: 4 }, (_, i) => { const c = chicken(i); c.position.set(-2.4 + i * 0.9 + rand(), 0, 1.6 + rand() * 1.5); c.rotation.y = rand() * 6; scene.add(c); return c; });
+
+  const hero = dressed(who("dennytosp"));
+  hero.root.scale.setScalar(1);
+  hero.parts.cap.visible = hero.parts.bag.visible = hero.parts.strap.visible = false;
+  raggedHat(hero);
+  cloak(hero);
+  dirt(hero, 0.9);
+  const l = lute();
+  hero.leftHand.add(l);
+  l.position.set(0.3, -0.45, 0.5);
+  l.rotation.z = -1.2;
+  l.scale.setScalar(0.8);
+  scene.add(hero.root);
+  // the tin cup at his feet, and the coin that lands in it
+  const cup = cyl(0.18, 0.2, 0.3, 0x9aa2aa, 12, 0.012);
+  scene.add(cup);
+  const coin = inked(new THREE.CylinderGeometry(0.1, 0.1, 0.025, 14), toon(0xe8b64a), 0.006);
+  scene.add(coin);
+  // passers-by: one hurries past, one stops and tosses a coin
+  const walkers = [PEASANT[1], PEASANT[5]].map((c, i) => { const v = villager(c, i); v.root.scale.setScalar(0.9); scene.add(v.root); return v; });
+  const notes = Array.from({ length: 6 }, (_, i) => {
+    const tex = canvasTexture(64, 64, (ctx) => { ctx.fillStyle = ["#ffe3a0", "#f6d77a", "#ffc8a0"][i % 3]; ctx.font = "700 52px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(i % 2 ? "♪" : "♫", 32, 34); });
+    const n = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+    scene.add(n);
+    return n;
+  });
+
+  const cues: Cues = [
+    [0.3, { kind: "pop", text: "♪ la-la-laaa ♪", at: V(0, 3.6, 0) }],
+    [1.2, { kind: "sfx", name: "cheer-soft", volume: 0.3 }],
+    [2.75, { kind: "sfx", name: "coin", volume: 1 }],
+    [2.8, { kind: "pop", text: "*clink*", at: V(0.9, 1.4, 1.2) }],
+    [3.55, { kind: "sfx", name: "thud", volume: 0.4, rate: 1.8 }],
+    [3.6, { kind: "pop", text: "*chomp*", at: V(0.4, 2.8, 0.8) }],
+    [4.2, { kind: "sfx", name: "jingle", volume: 0.8 }],
+    [4.2, { kind: "pop", text: "REAL GOLD?!", at: V(0.2, 3.6, 0.8), big: true }],
+  ];
+  const air0 = motes(scene, { count: 60, color: 0xfff080, size: 0.1, center: V(0, 1.5, -1), spread: V(14, 3, 10), rise: 0.15, drift: 0.8, opacity: 0.9, twinkle: true });
+  const air1 = flock(scene, 7, V(-14, 14, -30), V(1, 0, 0.5));
+  function update(u: number): Frame {
+    air0(u);
+    air1(u);
+    flicker(scene, u);
+    hero.update(u);
+    hero.root.position.set(-0.2 + Math.min(u, 2.4) * 0.35, Math.abs(Math.sin(u * 5)) * 0.06, 0);
+    hero.root.rotation.y = 0.35 + Math.sin(u * 2.5) * 0.12;
+    hero.rig.rotation.z = Math.sin(u * 5) * 0.07;
+    l.rotation.z = -0.9 + Math.sin(u * 14) * 0.05;
+    const cupAt = V(0.9, 0, 1.3);
+    cup.position.copy(cupAt);
+    // the coin: tossed from the second passer-by, into the cup, then up to his mouth
+    const toss = seg(u, 2.35, 2.75);
+    const from = V(3.6, 1.6, 0.4);
+    if (u < 3.3) {
+      coin.position.copy(from.clone().lerp(cupAt.clone().add(V(0, 0.2, 0)), toss));
+      coin.position.y += Math.sin(toss * Math.PI) * 1.2;
+      coin.rotation.x = toss * 12;
+      coin.visible = u > 2.35;
+    } else {
+      coin.visible = true;
+      const bite = seg(u, 3.3, 3.55);
+      coin.position.copy(cupAt.clone().add(V(0, 0.2, 0)).lerp(hero.root.position.clone().add(V(0.45, 1.25, 0.8)), bite));
+      coin.rotation.set(Math.PI / 2, 0, 0);
+      if (u > 3.55 && u < 3.75) coin.position.y += Math.sin(u * 60) * 0.03;
+    }
+    hero.rightHand.position.copy(hero.rest.right).add(u > 3.3 && u < 4.1 ? V(-0.45, 0.45, 0.45) : V(0, 0, 0));
+    hero.cheering = u > 4.2 ? 1 : 0;
+    walkers.forEach((v, i) => {
+      v.update(u + i);
+      if (i === 0) { v.root.position.set(6 - u * 2.6, Math.abs(Math.sin(u * 8)) * 0.08, -2.2); v.root.rotation.y = -Math.PI / 2; }
+      else {
+        const stop = Math.min(u, 2.2);
+        v.root.position.set(7 - stop * 1.5, stop < 2.2 ? Math.abs(Math.sin(u * 7)) * 0.07 : 0, 0.2);
+        v.root.rotation.y = u < 2.2 ? -Math.PI / 2 : -Math.PI / 2 - 0.5;
+        v.cheering = u > 2.25 && u < 2.8 ? 0.8 : 0;
+      }
+    });
+    chickens.forEach((c, i) => { (c.userData.head as THREE.Object3D).position.y = 0.55 - Math.max(0, Math.sin(u * 6 + i * 2)) * 0.2; c.rotation.y += 0.004 * (i % 2 ? 1 : -1); });
+    notes.forEach((n, i) => { const k = (u * 0.45 + i / 6) % 1; n.position.set(hero.root.position.x + Math.sin(i * 2.1 + u) * 1.2, 2.6 + k * 2, Math.cos(i * 1.3) * 0.5); n.lookAt(0, 3, 12); (n.material as THREE.MeshBasicMaterial).opacity = (1 - k) * (u < 3.3 || u > 4.2 ? 1 : 0.2); });
+    const s = u < 2.3 ? move(u, 0, 2.3, shot(V(-2.8, 2.0, 8.2), V(0.2, 1.7, -1), 38), shot(V(-1.6, 1.9, 7.0), V(0.4, 1.7, -0.5), 36))
+      : move(u, 2.3, 5, shot(V(2.2, 1.9, 6.4), V(0.6, 1.5, 0.4), 36), shot(V(1.8, 1.8, 5.2), V(0.6, 1.8, 0.4), 32));
+    return { shot: s, grade: { sat: 0.95, contrast: 1.08, vignette: 0.6, gain: new THREE.Color(1.12, 0.96, 0.86) } };
+  }
   return { scene, update, cues };
 }

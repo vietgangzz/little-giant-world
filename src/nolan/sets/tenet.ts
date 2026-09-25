@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW } from "../../crew";
 import { inked, toon } from "../../toon";
-import { box, canvasTexture, cyl, ease, lights, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
+import { box, canvasTexture, cyl, ease, lights, seeded, seg, shot, skyDome, V, type FilmSet, type Frame, motes } from "../../film/kit";
 import { lerp } from "../../noise";
 
 /**
@@ -144,7 +144,9 @@ export function tenet(): FilmSet {
     [2.7, { kind: "sfx", name: "crash", volume: 0.9, reverse: true }],
   ];
 
+  const air0 = motes(scene, { count: 160, color: 0xffffff, size: 0.04, center: V(0, 3, 0), spread: V(16, 6, 12), rise: -0.12, opacity: 0.5 });
   function update(u: number): Frame {
+    air0(u);
     // the whole scene is a palindrome around u = 2.5
     const p = 2.5 - Math.abs(u - 2.5);
     hero.update(u);

@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { dressed } from "../../accessories";
 import { CREW, LITTLE_GIANT } from "../../crew";
 import { easeOutBack } from "../../noise";
-import { additive, canvasTexture, ease, glide, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame } from "../../film/kit";
+import { additive, canvasTexture, ease, glide, lights, move, seeded, seg, shot, skyDome, V, type FilmSet, type Frame, flock, motes } from "../../film/kit";
 import { castle, cobbleTex, cottage, flicker, grassTex, ground, hayCart, stall, tree, well } from "../props";
 import { PEASANT, villager } from "../wardrobe";
 
@@ -52,7 +52,9 @@ export function portal(): FilmSet {
     [4.3, { kind: "pop", text: "1326!", at: V(0, 1.6, -10), big: true }],
     [4.3, { kind: "sfx", name: "braam", volume: 0.5 }],
   ];
+  const air0 = motes(scene, { count: 200, color: 0xd8b8ff, size: 0.08, center: V(0, 0, -20), spread: V(10, 8, 40), rise: 0.3, opacity: 0.8, twinkle: true });
   function update(u: number): Frame {
+    air0(u);
     const fly = u * 9;
     rings.forEach((r, i) => { r.position.z = ((((-i * 5 + fly) % 80) + 80) % 80) - 74; r.rotation.z = u * (i % 2 ? 0.6 : -0.4); });
     numerals.forEach((n, i) => { n.position.z = -8 - i * 3.5 + fly * 1.4; n.rotation.z = u * 0.8 + i; n.lookAt(0, 0, 20); });
@@ -131,7 +133,11 @@ export function arrival(): FilmSet {
     [4.0, { kind: "pop", text: "Huh?!", at: V(-5, 3, 3) }],
   ];
 
+  const air0 = motes(scene, { count: 120, color: 0xfff6c8, size: 0.05, center: V(0, 2, 2), spread: V(20, 5, 16), rise: 0.1, opacity: 0.6 });
+  const air1 = flock(scene, 7, V(-14, 20, -40), V(1, 0, 0.2));
   function update(u: number): Frame {
+    air0(u);
+    air1(u);
     flicker(scene, u);
     cast.forEach((c, i) => {
       c.d.update(u + i);
